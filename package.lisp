@@ -1,5 +1,7 @@
 (DEFPACKAGE :G000001
-  (:USE :CL :SHIBUYA.LISP)
+  (:USE :CL 
+        :SHIBUYA.LISP
+        :SERIES)
   (:IMPORT-FROM :CL-USER 
                 :QUIT)
   (:IMPORT-FROM :ASDF 

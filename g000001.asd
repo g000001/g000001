@@ -1,5 +1,10 @@
-(asdf:defsystem :G000001
-  :name "g000001"
-  :description "g000001"
-  :version "1"
-  :components ((:FILE "package")))
+(asdf:DEFSYSTEM :G000001
+  :NAME "g000001"
+  :DESCRIPTION "g000001"
+  :VERSION "2"
+  :COMPONENTS ((:FILE "package"))
+  :DEPENDS-ON (:SERIES
+               :ALEXANDRIA
+               :ASDF
+               :ASDF-INSTALL
+               :SHIBUYA.LISP ))
