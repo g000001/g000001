@@ -5,6 +5,4 @@
   :COMPONENTS ((:FILE "package"))
   :DEPENDS-ON (:SERIES
                :ALEXANDRIA
-               :ASDF
-               :ASDF-INSTALL
                :SHIBUYA.LISP ))
