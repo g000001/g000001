@@ -7,4 +7,20 @@
            USER-NAME
            NAME)))
 
+(DEFPARAMETER *PACKAGE-PATH* 
+  (LIST :SHIBUYA.LISP 
+        :FARE-UTILS 
+        :ALEXANDRIA
+        :MYCL-UTIL
+        :KMRCL
+        :METATILITIES
+        ))
 
+(DEFUN AUTO-IMPORT (NAME &AUX ANS)
+  (DOLIST (PKG (REVERSE *PACKAGE-PATH*))
+    (WHEN (AND (FIND-PACKAGE PKG)
+               (FIND-SYMBOL (STRING NAME) PKG))
+      (LET ((SYM (INTERN (STRING NAME) PKG)))
+        (SHADOWING-IMPORT SYM)
+        (PUSH PKG ANS))))
+  ANS)
