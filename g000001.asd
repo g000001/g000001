@@ -3,7 +3,7 @@
   :DESCRIPTION "g000001"
   :VERSION "2"
   :COMPONENTS ((:FILE "package")
-               (:FILE "g000001"))
+               (:FILE "g000001" :DEPENDS-ON ("package")))
   :DEPENDS-ON (:SERIES
                :ALEXANDRIA
                :SHIBUYA.LISP ))
