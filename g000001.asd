@@ -6,4 +6,5 @@
                (:FILE "g000001" :DEPENDS-ON ("package")))
   :DEPENDS-ON (:SERIES
                :ALEXANDRIA
-               :SHIBUYA.LISP ))
+               :SHIBUYA.LISP
+               :CL-TWITTER))
