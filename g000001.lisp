@@ -209,11 +209,10 @@ which conveniently return a form to undo what they did.
            :KEY #'TWIT::TWEET-ID))
     NIL))
 
+(IN-PACKAGE :TWIT)
 (PROGN
   ;; patch
   ;; バイナリで受けないとこけることがある
-  (IN-PACKAGE :TWIT)
-
   (defun get-tinyurl (url)
     "Get a TinyURL for the given URL. Uses the TinyURL API service.
    (c) by Chaitanaya Gupta via cl-twit"
@@ -227,7 +226,7 @@ which conveniently return a form to undo what they did.
           (error 'http-error
                  :status-code status-code
                  :url url
-                 :body body))))
-  (IN-PACKAGE :G000001))
+                 :body body)))))
+(IN-PACKAGE :G000001)
 
 
