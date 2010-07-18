@@ -1,5 +1,7 @@
 (IN-PACKAGE :G000001)
 
+(DEFVAR *TWITTER-USERS* () )
+
 #+ALLEGRO
 (DEFUN QUIT (&OPTIONAL CODE &KEY NO-UNWIND QUIET)
   (CL-USER::EXIT CODE :NO-UNWIND NO-UNWIND :QUIET QUIET))
@@ -192,3 +194,17 @@ which conveniently return a form to undo what they did.
 ;(logout)
 
 ;(unintern 'foo)
+
+
+(DEFUN PRINT-ALL-TWEETS ()
+  (LET ((ANS () ))
+    (DOLIST (USER *TWITTER-USERS*)
+      (LET ((TWIT:*TWITTER-USER* USER))
+        (SETQ ANS
+              (NCONC (twit:twitter-op :friends-timeline)
+                     ANS))))
+    (TWIT:PRINT-TWEETS 
+     (SORT (DELETE-DUPLICATES ANS :KEY #'TWIT::TWEET-ID)
+           #'<
+           :KEY #'TWIT::TWEET-ID))
+    NIL))
