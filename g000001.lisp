@@ -208,3 +208,26 @@ which conveniently return a form to undo what they did.
            #'<
            :KEY #'TWIT::TWEET-ID))
     NIL))
+
+(PROGN
+  ;; patch
+  ;; バイナリで受けないとこけることがある
+  (IN-PACKAGE :TWIT)
+
+  (defun get-tinyurl (url)
+    "Get a TinyURL for the given URL. Uses the TinyURL API service.
+   (c) by Chaitanaya Gupta via cl-twit"
+    (multiple-value-bind (body status-code)
+        (funcall *http-request-function*
+                 *tinyurl-url*
+                 :parameters `(("url" . ,url))
+                 :force-binary 'T)
+      (if (= status-code +http-ok+)
+          (SB-EXT:OCTETS-TO-STRING body)
+          (error 'http-error
+                 :status-code status-code
+                 :url url
+                 :body body))))
+  (IN-PACKAGE :G000001))
+
+
