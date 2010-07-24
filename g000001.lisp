@@ -210,7 +210,7 @@ which conveniently return a form to undo what they did.
     NIL))
 
 (IN-PACKAGE :TWIT)
-(PROGN
+#+SBCL (PROGN
   ;; patch
   ;; バイナリで受けないとこけることがある
   (defun get-tinyurl (url)
