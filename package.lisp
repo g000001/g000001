@@ -2,8 +2,8 @@
   (:USE :CL 
         :SHIBUYA.LISP
         :SERIES)
-  (:IMPORT-FROM :CL-USER 
-                :QUIT)
+  #-ALLEGRO (:IMPORT-FROM :CL-USER 
+                          :QUIT)
   (:IMPORT-FROM :ASDF 
                 :OOS :LOAD-OP)
   (:IMPORT-FROM :ASDF-INSTALL
