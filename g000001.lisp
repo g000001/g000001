@@ -263,3 +263,38 @@ which conveniently return a form to undo what they did.
                 :OPEN-SEARCH$TOTAL-RESULTS
                 :$T))))))
 
+
+(EXECUTOR:DEFINE-EXECUTABLE SCP)
+
+(DEFMACRO WITH-OUTPUT-TO-REMOTE-FILE ((STREAM PATH) &BODY BODY)
+  (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-OUTPUT-TO-REMOTE-FILE-"))))
+    `(UNWIND-PROTECT (PROGN
+                       (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME :DIRECTION :OUTPUT)
+                         ,@BODY)
+                       (SCP ,TEMP-FILE-NAME ,PATH)
+                       NIL)
+       (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
+         (DELETE-FILE ,TEMP-FILE-NAME)))))
+
+(DEFMACRO WITH-INPUT-FROM-REMOTE-FILE ((STREAM PATH) &BODY BODY)
+  (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-INPUT-FROM-REMOTE-FILE-"))))
+    `(UNWIND-PROTECT (PROGN
+                       (SCP ,PATH ,TEMP-FILE-NAME)
+                       (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME)
+                         ,@BODY)
+                       NIL)
+       (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
+         (DELETE-FILE ,TEMP-FILE-NAME)))))
+
+(DEFUN SED (START-PAT END-PAT NEW 
+            &KEY (IN *STANDARD-INPUT*) (OUT *STANDARD-OUTPUT*))
+  (LOOP :WITH OPEN 
+        :FOR LINE := (READ-LINE IN NIL NIL) :WHILE LINE
+        :DO (PROGN
+              (WHEN (SEARCH START-PAT LINE)
+                (SETQ OPEN 'T))
+              (COND ((AND OPEN (SEARCH END-PAT LINE))
+                     (SETQ OPEN NIL)
+                     (WRITE-LINE NEW OUT))
+                    ((NOT OPEN)
+                     (WRITE-LINE LINE OUT))))))
