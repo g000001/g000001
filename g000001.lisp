@@ -263,28 +263,30 @@ which conveniently return a form to undo what they did.
                 :OPEN-SEARCH$TOTAL-RESULTS
                 :$T))))))
 
+#+SBCL
+(PROGN
+  (EXECUTOR:DEFINE-EXECUTABLE SCP)
 
-(EXECUTOR:DEFINE-EXECUTABLE SCP)
+  (DEFMACRO WITH-OUTPUT-TO-REMOTE-FILE ((STREAM PATH) &BODY BODY)
+    (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-OUTPUT-TO-REMOTE-FILE-"))))
+      `(UNWIND-PROTECT (PROGN
+                         (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME :DIRECTION :OUTPUT)
+                           ,@BODY)
+                         (SCP ,TEMP-FILE-NAME ,PATH)
+                         NIL)
+         (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
+           (DELETE-FILE ,TEMP-FILE-NAME)))))
 
-(DEFMACRO WITH-OUTPUT-TO-REMOTE-FILE ((STREAM PATH) &BODY BODY)
-  (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-OUTPUT-TO-REMOTE-FILE-"))))
-    `(UNWIND-PROTECT (PROGN
-                       (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME :DIRECTION :OUTPUT)
-                         ,@BODY)
-                       (SCP ,TEMP-FILE-NAME ,PATH)
-                       NIL)
-       (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
-         (DELETE-FILE ,TEMP-FILE-NAME)))))
-
-(DEFMACRO WITH-INPUT-FROM-REMOTE-FILE ((STREAM PATH) &BODY BODY)
-  (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-INPUT-FROM-REMOTE-FILE-"))))
-    `(UNWIND-PROTECT (PROGN
-                       (SCP ,PATH ,TEMP-FILE-NAME)
-                       (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME)
-                         ,@BODY)
-                       NIL)
-       (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
-         (DELETE-FILE ,TEMP-FILE-NAME)))))
+  (DEFMACRO WITH-INPUT-FROM-REMOTE-FILE ((STREAM PATH) &BODY BODY)
+    (LET ((TEMP-FILE-NAME (STRING (GENSYM "/tmp/WITH-INPUT-FROM-REMOTE-FILE-"))))
+      `(UNWIND-PROTECT (PROGN
+                         (SCP ,PATH ,TEMP-FILE-NAME)
+                         (WITH-OPEN-FILE (,STREAM ,TEMP-FILE-NAME)
+                           ,@BODY)
+                         NIL)
+         (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
+           (DELETE-FILE ,TEMP-FILE-NAME)))))
+  )
 
 (DEFUN SED (START-PAT END-PAT NEW 
             &KEY (IN *STANDARD-INPUT*) (OUT *STANDARD-OUTPUT*))
