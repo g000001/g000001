@@ -6,12 +6,22 @@
 (DEFUN QUIT (&OPTIONAL CODE &KEY NO-UNWIND QUIET)
   (CL-USER::EXIT CODE :NO-UNWIND NO-UNWIND :QUIET QUIET))
 
-(DEFUN GITHUB-INSTALL (USER-NAME NAME)
+;; そのうち https対応したい
+#|(DEFUN GITHUB-INSTALL (USER-NAME NAME)
   (ASDF-INSTALL:INSTALL
    (FORMAT NIL
            "http://github.com/~A/~A/tarball/master"
            USER-NAME
-           NAME)))
+           NAME)))|#
+
+(defun GITHUB-INSTALL (user-name name)
+  (let* ((temp-filename (gensym "/tmp/asdf-install-"))
+         (stat (kl:run-shell-command "wget --no-check-certificate -O ~A https://github.com/~A/~A/tarball/master"
+                                     temp-filename
+                                     user-name
+                                     name)))
+    (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
+    (asdf-install:install temp-filename)))
 
 (DEFPARAMETER *PACKAGE-PATH* 
   (LIST :SHIBUYA.LISP 
