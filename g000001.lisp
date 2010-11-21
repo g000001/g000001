@@ -310,3 +310,77 @@ which conveniently return a form to undo what they did.
                      (WRITE-LINE NEW OUT))
                     ((NOT OPEN)
                      (WRITE-LINE LINE OUT))))))
+
+(defun |#/-READER| (stream char arg)
+  (declare (ignore char arg))
+  (let ((g (gensym))
+        (re (ppcre:regex-replace-all
+             "\\\\/"
+             (collect 'string
+                      (choose
+                       (let ((prev nil))
+                         (until-if (lambda (c)
+                                     (cond ((and (eql #\/ c)
+                                                 (not (eql #\\ prev)))
+                                            'T)
+                                           (:else (setq prev c)
+                                                  nil)))
+                                   (scan-stream stream #'read-char)))))
+             "/")))
+    `(lambda (,g)
+       (ppcre:scan ,re ,g))))
+
+(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
+
+
+(progn
+  (defun uninterned-symbols (tree)
+    (remove-if-not
+     (lambda (x)
+       (and (symbolp x)
+            (not (symbol-package x))))
+     (kl:flatten tree)))
+
+  (defun count-symbol-names (syms)
+    (let ((tab (make-hash-table :test 'equal)))
+      (dolist (s syms)
+        (incf (gethash (gensym-symbol-name s)
+                       tab 0)))
+      tab))
+
+  (defun gensym-symbol-name (sym)
+    (ppcre:regex-replace-all "-{0,1}\\d+$"
+                             (symbol-name sym)
+                             ""))
+  (defun mexp (form)
+    (let ((symtab (count-symbol-names
+                   (remove-duplicates
+                    (uninterned-symbols 
+                     (sb-cltl2:macroexpand-all form))))))
+      (fare-utils:cons-tree-map 
+       (lambda (x) 
+         (cond 
+           ;; シンボルでない場合は何もしない
+           ((not (symbolp x)) x)
+           ;; パッケージ名がある
+           ((symbol-package x)
+            (cond 
+              ;; 現在のパッケージ名と同じ
+              ((string= (package-name (symbol-package x))
+                        (package-name *package*))
+               x)
+              ;; 関数が束縛されていたらそのまま
+              ((fboundp x) x)
+              ;; それ以外は、パッケージ名を省略(現在のパッケージにする)
+              ('T (intern (symbol-name x)))))
+           ;; 接頭辞が一度しか使われてない場合は数字を取り除く
+           ((eql 1 (gethash (gensym-symbol-name x)
+                            symtab 
+                            0))
+            (intern (gensym-symbol-name x)))
+           ;; それ以外は、そのまま
+           ('T x)))
+       (sb-cltl2:macroexpand-all form))))
+
+  (defun mexp-string (form)
+    (write-to-string (mexp (read-from-string form)))) )
