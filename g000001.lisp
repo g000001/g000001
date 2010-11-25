@@ -384,3 +384,20 @@ which conveniently return a form to undo what they did.
 
   (defun mexp-string (form)
     (write-to-string (mexp (read-from-string form)))) )
+
+
+(defmacro w/outfile (out filename &body body)
+  `(with-open-file (,out
+                    ,filename
+                    :direction :output
+                    :if-exists :supersede)
+     ,@body))
+
+
+(defmacro w/outfile-sjis (out filename &body body)
+  `(with-open-file (,out
+                    ,filename
+                    :direction :output
+                    :if-exists :supersede
+                    :external-format :sjis)
+     ,@body))
