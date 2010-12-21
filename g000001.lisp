@@ -23,9 +23,9 @@
     (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
     (asdf-install:install temp-filename)))
 
-(DEFPARAMETER *PACKAGE-PATH* 
-  (LIST :SHIBUYA.LISP 
-        :FARE-UTILS 
+(DEFPARAMETER *PACKAGE-PATH*
+  (LIST :SHIBUYA.LISP
+        :FARE-UTILS
         :ALEXANDRIA
         :MYCL-UTIL
         :KMRCL
@@ -53,7 +53,7 @@
     (#\ら #\ラ #\ﾗ) (#\り #\リ #\ﾘ) (#\る #\ル #\ﾙ) (#\れ #\レ #\ﾚ) (#\ろ #\ロ #\ﾛ)
     (#\わ #\ワ #\ﾜ) (#\ゐ #\ヰ "ｲ") (#\ゑ #\ヱ "ｴ") (#\を #\ヲ #\ｦ)
     (#\ん #\ン #\ﾝ)
-    (#\が #\ガ "ｶﾞ") (#\ぎ #\ギ "ｷﾞ") (#\ぐ #\グ "ｸﾞ") (#\げ #\ゲ "ｹﾞ") 
+    (#\が #\ガ "ｶﾞ") (#\ぎ #\ギ "ｷﾞ") (#\ぐ #\グ "ｸﾞ") (#\げ #\ゲ "ｹﾞ")
     (#\ご #\ゴ "ｺﾞ") (#\ざ #\ザ "ｻﾞ") (#\じ #\ジ "ｼﾞ") (#\ず #\ズ "ｽﾞ")
     (#\ぜ #\ゼ "ｾﾞ") (#\ぞ #\ゾ "ｿﾞ") (#\だ #\ダ "ﾀﾞ") (#\ぢ #\ヂ "ﾁﾞ")
     (#\づ #\ヅ "ﾂﾞ") (#\で #\デ "ﾃﾞ") (#\ど #\ド "ﾄﾞ") (#\ば #\バ "ﾊﾞ")
@@ -66,14 +66,14 @@
     (#\ゎ #\ヮ "ﾜ")
     ("う゛" #\ヴ "ｳﾞ") (nil #\ヵ "ｶ") (nil #\ヶ "ｹ")
     (#\　 #\ ) (#\， #\, #\､) (#\． #\｡) (#\、 #\, #\､) (#\。 #\｡)
-    (#\・ nil #\･) (#\： #\:) (#\； #\;) (#\？ #\?) (#\！ #\!) (#\゛ nil #\ﾞ) 
-    (#\゜ nil #\ﾟ) (#\´ #\') (#\｀ #\`) (#\＾ #\^) (#\＿ #\_) (#\ー #\ｰ #\-) 
+    (#\・ nil #\･) (#\： #\:) (#\； #\;) (#\？ #\?) (#\！ #\!) (#\゛ nil #\ﾞ)
+    (#\゜ nil #\ﾟ) (#\´ #\') (#\｀ #\`) (#\＾ #\^) (#\＿ #\_) (#\ー #\ｰ #\-)
     (#\— #\-) (#\‐ #\-)
-    (#\／ #\/) (#\＼ #\\) (#\〜 #\~)  (#\｜ #\|) (#\‘ #\`) (#\’ #\') (#\“ #\") 
+    (#\／ #\/) (#\＼ #\\) (#\〜 #\~)  (#\｜ #\|) (#\‘ #\`) (#\’ #\') (#\“ #\")
     (#\” #\")
     (#\（ #\() (#\） #\)) (#\［ #\[) (#\］ #\]) (#\｛ #\{) (#\｝ #\})
     (#\〈 #\<) (#\〉 #\>) (#\「 nil #\｢) (#\」 nil #\｣)
-    (#\＋ #\+) (#\− #\-) (#\＝ #\=) (#\＜ #\<) (#\＞ #\>) 
+    (#\＋ #\+) (#\− #\-) (#\＝ #\=) (#\＜ #\<) (#\＞ #\>)
     (#\′ #\') (#\″ #\") (#\￥ #\\) (#\＄ #\$) (#\％ #\%)
     (#\＃ #\#) (#\＆ #\&) (#\＊ #\*) (#\＠ #\@)))
 
@@ -100,8 +100,8 @@
             :INITIAL-VALUE "")))
 
 (DEFUN GOOD-MORNING ()
-  (TWIT:UPDATE 
-   (JAPANESE-HANKAKU-STRING 
+  (TWIT:UPDATE
+   (JAPANESE-HANKAKU-STRING
     (CONCATENATE 'STRING
                  "お"
                  (KEBUNRIDGE-WORD "はようございま")
@@ -109,8 +109,8 @@
 
 
 (DEFUN OTSU ()
-  (TWIT:UPDATE 
-   (JAPANESE-HANKAKU-STRING 
+  (TWIT:UPDATE
+   (JAPANESE-HANKAKU-STRING
     (CONCATENATE 'STRING
                  "お"
                  (KEBUNRIDGE-WORD "つかれさまで")
@@ -121,7 +121,7 @@
 (setf (symbol-function 'cr) #'cl:identity)
 
 (defun pr (&rest args)
-  (princ 
+  (princ
    (with-output-to-string (out)
      (mapc (lambda (x) (princ x out)) args))))
 
@@ -131,20 +131,20 @@
 
 ;; lispm
 (defparameter user-id ""
-  "The value of user-id is either the name of the logged in user, 
+  "The value of user-id is either the name of the logged in user,
 as a string, or else an empty string if there is no user logged in.
  It appears in the who-line.")
 
 ;logout-list Variable
 (defparameter logout-list ()
-  "The value of logout-list is a list of forms 
+  "The value of logout-list is a list of forms
 which are evaluated when a user logs out.")
 
 (defun login (name &optional (load-init))
   "If anyone is logged into the machine, login logs him out.
  (See logout .) Then user-id is set from name.
- Finally login attempts to find your INIT file. 
-It first looks in \"user-id ; .LISPM (INIT)\", then in \"(INIT); 
+ Finally login attempts to find your INIT file.
+It first looks in \"user-id ; .LISPM (INIT)\", then in \"(INIT);
 user-id .LISPM\", and finally in the default init file
  \"(INIT); * .LISPM\". When it finds one of these that exists,
  it loads it in. login returns t ."
@@ -154,10 +154,10 @@ user-id .LISPM\", and finally in the default init file
 
 (defun logout (&optional name)
   "First, logout evaluates the forms on logout-list.
- Then it tries to find a file to run, looking first in 
-\"user-id ; .LSPM_ (INIT)\", then in \"(INIT); user-id .LSPM_\", 
-and finally in the default file \"(INIT); * .LSPM_\". 
-If and when it finds one it these that exists, 
+ Then it tries to find a file to run, looking first in
+\"user-id ; .LSPM_ (INIT)\", then in \"(INIT); user-id .LSPM_\",
+and finally in the default file \"(INIT); * .LSPM_\".
+If and when it finds one it these that exists,
 it loads it in. Then it sets user-id to an empty string and
  logout-list to nil , and returns t ."
   (declare (ignore name))
@@ -188,8 +188,8 @@ it loads it in. Then it sets user-id to an empty string and
 
 ;login-eval x
 (defmacro login-eval (&rest form)
-  "login-eval is used for functions which are \"meant to be called\" 
-from INIT files, such as eine:ed-redefine-keys, 
+  "login-eval is used for functions which are \"meant to be called\"
+from INIT files, such as eine:ed-redefine-keys,
 which conveniently return a form to undo what they did.
  login-eval adds the result of the form x to the logout-list."
   `(progn
@@ -213,7 +213,7 @@ which conveniently return a form to undo what they did.
         (SETQ ANS
               (NCONC (twit:twitter-op :friends-timeline)
                      ANS))))
-    (TWIT:PRINT-TWEETS 
+    (TWIT:PRINT-TWEETS
      (SORT (DELETE-DUPLICATES ANS :KEY #'TWIT::TWEET-ID)
            #'<
            :KEY #'TWIT::TWEET-ID))
@@ -240,19 +240,19 @@ which conveniently return a form to undo what they did.
 (IN-PACKAGE :G000001)
 
 (DEFUN GET-CALENDAR-JSON (UT)
-  (LET ((REQUEST-URL 
-         (KMRCL:MAKE-URL 
+  (LET ((REQUEST-URL
+         (KMRCL:MAKE-URL
           "full"
           :BASE-DIR "http://www.google.com/calendar/feeds/japanese@holiday.calendar.google.com/public/"
           :VARS `(("start-min" . ,(XYZZY:FORMAT-DATE-STRING "%Y-%m-%d" UT))
-                  ("start-max" . ,(XYZZY:FORMAT-DATE-STRING 
+                  ("start-max" . ,(XYZZY:FORMAT-DATE-STRING
                                    "%Y-%m-%d"
                                    (+ UT (* 24 60 60))))
                   ("max-results" . "1")
                   ("alt" . "json-in-script")
                   ("callback" . "handleJson")))))
     (STRING-TRIM "handleJson();"
-                 (#-SBCL TRIVIAL-UTF-8:UTF-8-BYTES-TO-STRING 
+                 (#-SBCL TRIVIAL-UTF-8:UTF-8-BYTES-TO-STRING
                   #+SBCL SB-EXT:OCTETS-TO-STRING
                   (DRAKMA:HTTP-REQUEST REQUEST-URL :FORCE-BINARY 'T)))))
 
@@ -298,9 +298,9 @@ which conveniently return a form to undo what they did.
            (DELETE-FILE ,TEMP-FILE-NAME)))))
   )
 
-(DEFUN SED (START-PAT END-PAT NEW 
+(DEFUN SED (START-PAT END-PAT NEW
             &KEY (IN *STANDARD-INPUT*) (OUT *STANDARD-OUTPUT*))
-  (LOOP :WITH OPEN 
+  (LOOP :WITH OPEN
         :FOR LINE := (READ-LINE IN NIL NIL) :WHILE LINE
         :DO (PROGN
               (WHEN (SEARCH START-PAT LINE)
@@ -330,8 +330,7 @@ which conveniently return a form to undo what they did.
     `(lambda (,g)
        (ppcre:scan ,re ,g))))
 
-(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
-
+;(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
 
 (progn
   (defun uninterned-symbols (tree)
@@ -355,30 +354,37 @@ which conveniently return a form to undo what they did.
   (defun mexp (form)
     (let ((symtab (count-symbol-names
                    (remove-duplicates
-                    (uninterned-symbols 
+                    (uninterned-symbols
                      (sb-cltl2:macroexpand-all form))))))
-      (fare-utils:cons-tree-map 
-       (lambda (x) 
-         (cond 
-           ;; シンボルでない場合は何もしない
+      (fare-utils:cons-tree-map
+       (lambda (x)
+         (cond
+           ;; シンボルでない場合はスルー
            ((not (symbolp x)) x)
+           ;; キーワードの場合はスルー
+           ((keywordp x) x)
            ;; パッケージ名がある
            ((symbol-package x)
-            (cond 
+            (cond
               ;; 現在のパッケージ名と同じ
               ((string= (package-name (symbol-package x))
                         (package-name *package*))
                x)
-              ;; 関数が束縛されていたらそのまま
+              ;; 関数が束縛されていたらスルー
               ((fboundp x) x)
               ;; それ以外は、パッケージ名を省略(現在のパッケージにする)
               ('T (intern (symbol-name x)))))
            ;; 接頭辞が一度しか使われてない場合は数字を取り除く
-           ((eql 1 (gethash (gensym-symbol-name x)
-                            symtab 
-                            0))
+           ((= 1 (gethash (gensym-symbol-name x)
+                          symtab
+                          0))
             (intern (gensym-symbol-name x)))
-           ;; それ以外は、そのまま
+           ;; > 1
+           ((< 1 (gethash (gensym-symbol-name x)
+                          symtab
+                          0))
+            (intern (string-downcase (symbol-name x))))
+           ;; それ以外は、スルー
            ('T x)))
        (sb-cltl2:macroexpand-all form))))
 
@@ -401,3 +407,31 @@ which conveniently return a form to undo what they did.
                     :if-exists :supersede
                     :external-format :sjis)
      ,@body))
+
+
+;(defmacro w/> )
+
+(defmacro with-< ((in filename &rest args) &body body)
+  `(with-open-file (,in ,filename ,@args) ,@body))
+
+(defmacro with-> ((out filename &rest args) &body body)
+  (let ((args (copy-list args)))
+    (remf args :direction)
+    (remf args :if-exists)
+    `(with-open-file (,out
+                      ,filename
+                      :direction :output
+                      :if-exists :supersede
+                      ,@args)
+       ,@body)))
+
+(defmacro with->> ((out filename &rest args) &body body)
+  (let ((args (copy-list args)))
+    (remf args :direction)
+    (remf args :if-exists)
+    `(with-open-file (,out
+                      ,filename
+                      :direction :output
+                      :if-exists :append
+                      ,@args)
+       ,@body)))
