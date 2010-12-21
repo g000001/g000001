@@ -1,6 +1,6 @@
 (IN-PACKAGE :G000001)
 
-(DEFVAR *TWITTER-USERS* () )
+#|(DEFVAR *TWITTER-USERS* () )|#
 
 #+ALLEGRO
 (DEFUN QUIT (&OPTIONAL CODE &KEY NO-UNWIND QUIET)
@@ -99,22 +99,22 @@
                          (STRING (CHAR WORD (1- LEN))))
             :INITIAL-VALUE "")))
 
-(DEFUN GOOD-MORNING ()
+#|(DEFUN GOOD-MORNING ()
   (TWIT:UPDATE
    (JAPANESE-HANKAKU-STRING
     (CONCATENATE 'STRING
                  "お"
                  (KEBUNRIDGE-WORD "はようございま")
-                 "す!"))))
+                 "す!"))))|#
 
 
-(DEFUN OTSU ()
+#|(DEFUN OTSU ()
   (TWIT:UPDATE
    (JAPANESE-HANKAKU-STRING
     (CONCATENATE 'STRING
                  "お"
                  (KEBUNRIDGE-WORD "つかれさまで")
-                 "す!"))))
+                 "す!"))))|#
 
 
 ;; CR
@@ -206,7 +206,7 @@ which conveniently return a form to undo what they did.
 ;(unintern 'foo)
 
 
-(DEFUN PRINT-ALL-TWEETS ()
+#|(DEFUN PRINT-ALL-TWEETS ()
   (LET ((ANS () ))
     (DOLIST (USER *TWITTER-USERS*)
       (LET ((TWIT:*TWITTER-USER* USER))
@@ -217,9 +217,9 @@ which conveniently return a form to undo what they did.
      (SORT (DELETE-DUPLICATES ANS :KEY #'TWIT::TWEET-ID)
            #'<
            :KEY #'TWIT::TWEET-ID))
-    NIL))
+    NIL))|#
 
-(IN-PACKAGE :TWIT)
+#|(IN-PACKAGE :TWIT)
 #+SBCL (PROGN
   ;; patch
   ;; バイナリで受けないとこけることがある
@@ -238,6 +238,7 @@ which conveniently return a form to undo what they did.
                  :url url
                  :body body)))))
 (IN-PACKAGE :G000001)
+|#
 
 (DEFUN GET-CALENDAR-JSON (UT)
   (LET ((REQUEST-URL
