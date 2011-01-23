@@ -5,6 +5,7 @@
   :COMPONENTS ((:FILE "package")
                (:FILE "g000001" :DEPENDS-ON ("package")))
   :DEPENDS-ON (:SERIES
+               :series-ext
                :kmrcl
                :fare-utils
                :ALEXANDRIA
