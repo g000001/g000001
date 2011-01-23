@@ -1,13 +1,13 @@
 (DEFPACKAGE :G000001
-  (:USE :CL 
+  (:USE :CL
         :SHIBUYA.LISP
         :SERIES)
-  #-ALLEGRO (:IMPORT-FROM :CL-USER 
+  #-ALLEGRO (:IMPORT-FROM :CL-USER
                           :QUIT)
-  (:IMPORT-FROM :ASDF 
+  (:IMPORT-FROM :ASDF
                 :OOS :LOAD-OP)
-  (:IMPORT-FROM :ASDF-INSTALL
-                :INSTALL)
+  #-asdf2 (:IMPORT-FROM :ASDF-INSTALL
+                        :INSTALL)
   (:IMPORT-FROM :ALEXANDRIA
                 :CURRY))
 
@@ -15,7 +15,7 @@
 
 #||
 #-SCL
- (PROGN 
+ (PROGN
   ;; ASDFのOOSをcl-userへインポート
   (SHADOWING-IMPORT '(ASDF:OOS ASDF:LOAD-OP))
   (SHADOWING-IMPORT '(ASDF-INSTALL:INSTALL) :CL-USER)

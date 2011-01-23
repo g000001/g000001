@@ -5,6 +5,11 @@
   :COMPONENTS ((:FILE "package")
                (:FILE "g000001" :DEPENDS-ON ("package")))
   :DEPENDS-ON (:SERIES
+               :kmrcl
+               :fare-utils
                :ALEXANDRIA
                :SHIBUYA.LISP
-               :CL-TWITTER))
+               :CL-TWITTER
+               :xyzzy-compat
+               :zl-compat
+               :executor))

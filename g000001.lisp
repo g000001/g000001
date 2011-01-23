@@ -13,7 +13,7 @@
            "http://github.com/~A/~A/tarball/master"
            USER-NAME
            NAME)))|#
-
+#-asdf2
 (defun GITHUB-INSTALL (user-name name)
   (let* ((temp-filename (gensym "/tmp/asdf-install-"))
          (stat (kl:run-shell-command "wget --no-check-certificate -O ~A https://github.com/~A/~A/tarball/master"
@@ -22,6 +22,21 @@
                                      name)))
     (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
     (asdf-install:install temp-filename)))
+
+#+asdf2
+(defun GITHUB-INSTALL (user-name name &optional (github-files-directory "/share/sys/cl/src/github/"))
+  (let* ((temp-filename (gensym "/tmp/github-install-"))
+         (stat (kl:run-shell-command "wget --no-check-certificate -O ~A https://github.com/~A/~A/tarball/master"
+                                     temp-filename
+                                     user-name
+                                     name)))
+    (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
+    (setq stat
+          (kl:run-shell-command "tar -zxvf ~A -C ~A"
+                                temp-filename
+                                github-files-directory))
+    (or (zerop stat) (error "GITHUB-INSTALL: Untar failed."))
+    (asdf:initialize-source-registry)))
 
 (DEFPARAMETER *PACKAGE-PATH*
   (LIST :SHIBUYA.LISP
@@ -412,27 +427,64 @@ which conveniently return a form to undo what they did.
 
 ;(defmacro w/> )
 
-(defmacro with-< ((in filename &rest args) &body body)
-  `(with-open-file (,in ,filename ,@args) ,@body))
+(defmacro with-< (spec &body body)
+  (etypecase spec
+    (cons (destructuring-bind (in filename &rest args)
+                              spec
+            `(with-open-file (,in ,filename ,@args) ,@body)))
+    ((or string pathname)
+     `(with-open-file (< ,spec) ,@body))))
 
-(defmacro with-> ((out filename &rest args) &body body)
-  (let ((args (copy-list args)))
-    (remf args :direction)
-    (remf args :if-exists)
-    `(with-open-file (,out
-                      ,filename
-                      :direction :output
-                      :if-exists :supersede
-                      ,@args)
-       ,@body)))
+(defmacro with-> (spec &body body)
+  (etypecase spec
+    (cons (destructuring-bind (out filename &rest args)
+                              spec
+            (let ((args (copy-list args)))
+              (remf args :direction)
+              (remf args :if-exists)
+              `(with-open-file (,out
+                                ,filename
+                                :direction :output
+                                :if-exists :supersede
+                                ,@args)
+                 ,@body))))
+    ((or string pathname)
+     `(with-open-file (>
+                       ,spec
+                       :direction :output
+                       :if-exists :supersede)
+        ,@body))))
 
-(defmacro with->> ((out filename &rest args) &body body)
-  (let ((args (copy-list args)))
-    (remf args :direction)
-    (remf args :if-exists)
-    `(with-open-file (,out
-                      ,filename
-                      :direction :output
-                      :if-exists :append
-                      ,@args)
-       ,@body)))
+(defmacro with->> (spec &body body)
+  (etypecase spec
+    (cons (destructuring-bind (out filename &rest args)
+                              spec
+            (let ((args (copy-list args)))
+              (remf args :direction)
+              (remf args :if-exists)
+              `(with-open-file (,out
+                                ,filename
+                                :direction :output
+                                :if-exists :append
+                                ,@args)
+                 ,@body))))
+    ((or string pathname)
+     `(with-open-file (>
+                       ,spec
+                       :direction :output
+                       :if-exists :append)
+        ,@body))))
+
+#+sbcl
+(progn
+  (handler-case
+      (cl:defpackage :generic
+        (:use :sequence)
+        (:nicknames :g))
+    (sb-int:package-at-variance (&rest arg) (print (list arg))))
+
+  (do-symbols (s :sequence)
+    (multiple-value-bind (sym stat)
+                         (find-symbol (string s) :sequence)
+      (if (eq :external stat)
+          (export sym :g)))))
