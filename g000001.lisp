@@ -1,5 +1,12 @@
 (IN-PACKAGE :G000001)
 
+(kl:defconstant* +line+ "~V@{~A~:*~}~%")
+
+;(format nil +line+ 80 "=")
+;=> "================================================================================
+;   "
+
+
 #|(DEFVAR *TWITTER-USERS* () )|#
 
 #+ALLEGRO
@@ -488,3 +495,14 @@ which conveniently return a form to undo what they did.
                          (find-symbol (string s) :sequence)
       (if (eq :external stat)
           (export sym :g)))))
+
+(defun show-packages ()
+  (letS* ((p (Elist (sort (list-all-packages) #'string< :key #'package-name)))
+          (i (scan-range :from 1)))
+    (Rignore
+     (progn
+       (format T
+               "~4,'0D: ~A ~:[~;~:*~A~]~%"
+               i
+               (package-name p)
+               (package-nicknames p))))))
