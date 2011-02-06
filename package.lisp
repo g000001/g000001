@@ -1,7 +1,8 @@
 (DEFPACKAGE :G000001
   (:USE :CL
         :SHIBUYA.LISP
-        :SERIES)
+        :SERIES
+        :F-UNDERSCORE)
   #-ALLEGRO (:IMPORT-FROM :CL-USER
                           :QUIT)
   (:IMPORT-FROM :ASDF
