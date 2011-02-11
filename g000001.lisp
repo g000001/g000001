@@ -1,8 +1,8 @@
 (IN-PACKAGE :G000001)
 
-(kl:defconstant* +line+ "~V@{~A~:*~}~%")
+(kl:defconstant* fmt-hr "~V@{~A~:*~}~%")
 
-;(format nil +line+ 80 "=")
+;(format nil fmt-hr 80 "=")
 ;=> "================================================================================
 ;   "
 
@@ -506,3 +506,15 @@ which conveniently return a form to undo what they did.
                i
                (package-name p)
                (package-nicknames p))))))
+
+;; (nth-value 1 ...) => (\1 ...)
+(dotimes (i 10)
+  (eval `(defmacro ,(intern (format nil "~D" i)) (form)
+           `(nth-value ,,i ,form))))
+
+
+
+
+
+
+
