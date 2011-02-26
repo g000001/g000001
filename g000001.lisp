@@ -1,6 +1,7 @@
 (IN-PACKAGE :G000001)
 
-(kl:defconstant* fmt-hr "~V@{~A~:*~}~%")
+(kl:defconstant* fmt-hr "~V@{~A~:*~}~*~%"
+  "fmt-hr (length string)")
 
 ;(format nil fmt-hr 80 "=")
 ;=> "================================================================================
@@ -52,6 +53,7 @@
         :MYCL-UTIL
         :KMRCL
         :METATILITIES
+        :SCLF
         ))
 
 (DEFUN AUTO-IMPORT (NAME &AUX ANS)
@@ -513,8 +515,37 @@ which conveniently return a form to undo what they did.
            `(nth-value ,,i ,form))))
 
 
+;;; ADD-TEST-FN
+(defvar *foo-operators*
+  (atap ()
+    ;; clパッケージから:testを受け付けるオペレーターを探す
+    (do-symbols (sym :cl)
+      (when (and (fboundp sym)
+                 (member 'test (member '&key (kl:flatten (swank::arglist sym)))
+                         :key #'princ-to-string :test #'string-equal))
+        (push sym it)))))
 
+(defun get-test-fn (expr)
+  (second (member :test expr)))
 
+(defun add-test-fn (expr test-fn)
+  (labels ((*self (expr)
+             (destructuring-bind (&optional car &rest cdr) expr
+               (cond ((null expr) () )
+                     ;;
+                     ((consp car)
+                      (cons (*self car) (*self cdr)))
+                     ;;
+                     ((eq 'quote car) expr)
+                     ;;
+                     ((member car *foo-operators*)
+                      (if (get-test-fn expr)
+                          expr
+                          `(,car ,@(*self cdr) :test ,test-fn)))
+                     ;;
+                     ('T (cons car (*self cdr)))))))
+    (*self expr)))
 
-
-
+(defmacro with-default-test (test &body body)
+  `(progn
+     ,@(add-test-fn body test)))

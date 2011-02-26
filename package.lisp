@@ -2,7 +2,9 @@
   (:USE :CL
         :SHIBUYA.LISP
         :SERIES
-        :F-UNDERSCORE)
+        :F-UNDERSCORE
+        :series-ext
+        )
   #-ALLEGRO (:IMPORT-FROM :CL-USER
                           :QUIT)
   (:IMPORT-FROM :ASDF
@@ -10,7 +12,9 @@
   #-asdf2 (:IMPORT-FROM :ASDF-INSTALL
                         :INSTALL)
   (:IMPORT-FROM :ALEXANDRIA
-                :CURRY))
+                :CURRY)
+  (:import-from :sclf
+                :be))
 
 (IN-PACKAGE :G000001)
 
