@@ -555,3 +555,9 @@ which conveniently return a form to undo what they did.
              ,@body)
            ,@(mapcar #'cadr bindings)))
 
+(defmacro with-output-to-browser ((stream &key (browser "firefox")) &body body)
+  (let ((filename (format nil "/tmp/~A" (gensym "TEMPFILE-"))))
+    `(macrolet ((#0=#:command-output-status (form) `(nth-value 2 ,form)))
+       (with-open-file (,stream ,filename :direction :output :if-exists :supersede)
+         ,@body)
+       (zerop (#0# (kl:command-output "~A ~A" ,browser ,filename))))))
