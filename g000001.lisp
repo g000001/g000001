@@ -549,3 +549,9 @@ which conveniently return a form to undo what they did.
 (defmacro with-default-test (test &body body)
   `(progn
      ,@(add-test-fn body test)))
+
+(defmacro maplet ((&rest bindings) &body body)
+  `(mapcar (lambda (,@(mapcar #'car bindings))
+             ,@body)
+           ,@(mapcar #'cadr bindings)))
+
