@@ -7,8 +7,10 @@
         )
   #-ALLEGRO (:IMPORT-FROM :CL-USER
                           :QUIT)
-  (:IMPORT-FROM :ASDF
-                :OOS :LOAD-OP)
+  #-asdf2 (:IMPORT-FROM :ASDF
+                        :OOS :LOAD-OP)
+  #+sbcl (:import-from :sb-ext
+                       :without-package-locks)
   #-asdf2 (:IMPORT-FROM :ASDF-INSTALL
                         :INSTALL)
   (:IMPORT-FROM :ALEXANDRIA
