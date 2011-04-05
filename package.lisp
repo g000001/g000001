@@ -16,7 +16,10 @@
   (:IMPORT-FROM :ALEXANDRIA
                 :CURRY)
   (:import-from :sclf
-                :be))
+                :be)
+  (:export :with->
+           :with-<
+           :with->>))
 
 (IN-PACKAGE :G000001)
 
