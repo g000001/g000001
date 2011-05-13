@@ -670,4 +670,12 @@ which conveniently return a form to undo what they did.
 (defmacro incorrect-structure-setf (&rest args)
   (error "You cannot SETF the place ~S~% in a way that refers to its old contents." args))
 
+(defun use-package-soft (package-to-use &optional (package (sb-int:sane-package)))
+  (let ((not-imported () ))
+    (do-external-symbols (s package-to-use)
+      (if (find-symbol (string s))
+          (push s not-imported)
+          (import s package)))
+    not-imported))
+
 ;; eof
