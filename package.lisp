@@ -1,27 +1,52 @@
-(DEFPACKAGE :G000001
-  (:USE :CL
-        :SHIBUYA.LISP
-        :SERIES
-        :F-UNDERSCORE
+(in-package :cl-user)
+;(delete-package :g000001)
+
+(defpackage :root.user.g000001
+  (:use :tao
+        ;; :shibuya.lisp
+        :series
+        ;; :f-underscore
         :series-ext
+        :named-readtables
+        :root.package.g000001
+        :root.function.g000001
         )
-  #-ALLEGRO (:IMPORT-FROM :CL-USER
-                          :QUIT)
-  #-asdf2 (:IMPORT-FROM :ASDF
-                        :OOS :LOAD-OP)
-  #+sbcl (:import-from :sb-ext
-                       :without-package-locks)
-  #-asdf2 (:IMPORT-FROM :ASDF-INSTALL
-                        :INSTALL)
-  (:IMPORT-FROM :ALEXANDRIA
-                :CURRY)
-  (:import-from :sclf
-                :be)
+  (:nicknames :g1 :g000001)
+  #-allegro (:import-from :cl-user
+                          :quit )
+  #-asdf2 (:import-from :asdf
+                        :oos :load-op)
+  #-asdf2 (:import-from :asdf-install
+                        :install )
+  #|(:import-from :alexandria
+                :curry )|#
+  #|(:import-from :sclf
+  :be )|#
+  (:shadowing-import-from :cl
+                          . #.(cl:let ((tao-symbols '() )
+                                       (cl-symbols '() ) )
+                                (cl:do-external-symbols (s :cl)
+                                  (cl:push s cl-symbols) )
+                                (cl:do-external-symbols (s :tao)
+                                  (cl:push s tao-symbols) )
+                                (cl:set-difference cl-symbols tao-symbols) ))
   (:export :with->
            :with-<
-           :with->>))
+           :with->>
+           :pkg-bind ))
 
-(IN-PACKAGE :G000001)
+(defpackage :root.package.g000001
+  (:use :cl)
+  (:export :*package-path*
+           :pkg-bind
+           :use-package-soft
+           :show-packages))
+
+(defpackage :root.function.g000001
+  (:use :cl #+sbcl :sb-ext))
+
+
+(in-package :g1)
 
 #||
 #-SCL

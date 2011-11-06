@@ -1,19 +1,26 @@
-(asdf:DEFSYSTEM :G000001
-  :NAME "g000001"
-  :DESCRIPTION "g000001"
-  :VERSION "3"
-  :COMPONENTS ((:FILE "package")
-               (:FILE "g000001" :DEPENDS-ON ("package")))
-  :DEPENDS-ON (:swank
-               :SERIES
-               :SERIES-EXT
-               :KMRCL
-               :FARE-UTILS
-               :ALEXANDRIA
-               :SHIBUYA.LISP
-               :CL-TWITTER
-               :XYZZY-COMPAT
-               :ZL-COMPAT
-               :EXECUTOR
-               :SCLF
+(asdf:defsystem :g000001
+  :name "g000001"
+  :description "g000001"
+  :version "5"
+  :serial t
+  :components ((:file "package")
+               (:file "package.g000001")
+               (:file "function.g000001")
+               (:file "g000001")
+               (:file "lispm"))
+  :depends-on (:root
+               :named-readtables
+               :tao-compat
+               :swank
+               :series
+               :series-ext
+               :kmrcl
+               :fare-utils
+               :alexandria
+               :shibuya.lisp
+               ;:cl-twitter
+               :xyzzy-compat
+               :zl-compat
+;               :executor
+;               :sclf
                ))

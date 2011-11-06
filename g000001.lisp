@@ -1,4 +1,14 @@
-(IN-PACKAGE :G000001)
+(in-package :g1)
+(in-readtable :tao)
+
+(setq *PACKAGE-PATH* (LIST :SHIBUYA.LISP
+                           :FARE-UTILS
+                           :ALEXANDRIA
+                           :MYCL-UTIL
+                           :KMRCL
+                           :METATILITIES
+                           :SCLF
+                           ))
 
 (kl:defconstant* fmt-hr "~V@{~A~:*~}~*~%"
   "fmt-hr (length string)")
@@ -8,298 +18,20 @@
 ;   "
 
 
-#|(DEFVAR *TWITTER-USERS* () )|#
-
-#+ALLEGRO
-(DEFUN QUIT (&OPTIONAL CODE &KEY NO-UNWIND QUIET)
-  (CL-USER::EXIT CODE :NO-UNWIND NO-UNWIND :QUIET QUIET))
-
-;; そのうち https対応したい
-#|(DEFUN GITHUB-INSTALL (USER-NAME NAME)
-  (ASDF-INSTALL:INSTALL
-   (FORMAT NIL
-           "http://github.com/~A/~A/tarball/master"
-           USER-NAME
-           NAME)))|#
-#-asdf2
-(defun GITHUB-INSTALL (user-name name)
-  (let* ((temp-filename (gensym "/tmp/asdf-install-"))
-         (stat (kl:run-shell-command "wget --no-check-certificate -O ~A https://github.com/~A/~A/tarball/master"
-                                     temp-filename
-                                     user-name
-                                     name)))
-    (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
-    (asdf-install:install temp-filename)))
-
-#+asdf2
-(defun GITHUB-INSTALL (user-name name &optional (github-files-directory "/share/sys/cl/src/github/"))
-  (let* ((temp-filename (gensym "/tmp/github-install-"))
-         (stat (kl:run-shell-command "wget --no-check-certificate -O ~A https://github.com/~A/~A/tarball/master"
-                                     temp-filename
-                                     user-name
-                                     name)))
-    (or (zerop stat) (error "GITHUB-INSTALL: Something went wrong."))
-    (setq stat
-          (kl:run-shell-command "tar -zxvf ~A -C ~A"
-                                temp-filename
-                                github-files-directory))
-    (or (zerop stat) (error "GITHUB-INSTALL: Untar failed."))
-    (asdf:initialize-source-registry)))
-
-(DEFPARAMETER *PACKAGE-PATH*
-  (LIST :SHIBUYA.LISP
-        :FARE-UTILS
-        :ALEXANDRIA
-        :MYCL-UTIL
-        :KMRCL
-        :METATILITIES
-        :SCLF
-        ))
-
-(DEFUN AUTO-IMPORT (NAME &AUX ANS)
-  (DOLIST (PKG (REVERSE *PACKAGE-PATH*))
-    (WHEN (AND (FIND-PACKAGE PKG)
-               (FIND-SYMBOL (STRING NAME) PKG))
-      (LET ((SYM (INTERN (STRING NAME) PKG)))
-        (SHADOWING-IMPORT SYM)
-        (PUSH PKG ANS))))
-  ANS)
-
-(DEFVAR *japanese-kana-table*
-  '((#\あ #\ア #\ｱ) (#\い #\イ #\ｲ) (#\う #\ウ #\ｳ) (#\え #\エ #\ｴ) (#\お #\オ #\ｵ)
-    (#\か #\カ #\ｶ) (#\き #\キ #\ｷ) (#\く #\ク #\ｸ) (#\け #\ケ #\ｹ) (#\こ #\コ #\ｺ)
-    (#\さ #\サ #\ｻ) (#\し #\シ #\ｼ) (#\す #\ス #\ｽ) (#\せ #\セ #\ｾ) (#\そ #\ソ #\ｿ)
-    (#\た #\タ #\ﾀ) (#\ち #\チ #\ﾁ) (#\つ #\ツ #\ﾂ) (#\て #\テ #\ﾃ) (#\と #\ト #\ﾄ)
-    (#\な #\ナ #\ﾅ) (#\に #\ニ #\ﾆ) (#\ぬ #\ヌ #\ﾇ) (#\ね #\ネ #\ﾈ) (#\の #\ノ #\ﾉ)
-    (#\は #\ハ #\ﾊ) (#\ひ #\ヒ #\ﾋ) (#\ふ #\フ #\ﾌ) (#\へ #\ヘ #\ﾍ) (#\ほ #\ホ #\ﾎ)
-    (#\ま #\マ #\ﾏ) (#\み #\ミ #\ﾐ) (#\む #\ム #\ﾑ) (#\め #\メ #\ﾒ) (#\も #\モ #\ﾓ)
-    (#\や #\ヤ #\ﾔ) (#\ゆ #\ユ #\ﾕ) (#\よ #\ヨ #\ﾖ)
-    (#\ら #\ラ #\ﾗ) (#\り #\リ #\ﾘ) (#\る #\ル #\ﾙ) (#\れ #\レ #\ﾚ) (#\ろ #\ロ #\ﾛ)
-    (#\わ #\ワ #\ﾜ) (#\ゐ #\ヰ "ｲ") (#\ゑ #\ヱ "ｴ") (#\を #\ヲ #\ｦ)
-    (#\ん #\ン #\ﾝ)
-    (#\が #\ガ "ｶﾞ") (#\ぎ #\ギ "ｷﾞ") (#\ぐ #\グ "ｸﾞ") (#\げ #\ゲ "ｹﾞ")
-    (#\ご #\ゴ "ｺﾞ") (#\ざ #\ザ "ｻﾞ") (#\じ #\ジ "ｼﾞ") (#\ず #\ズ "ｽﾞ")
-    (#\ぜ #\ゼ "ｾﾞ") (#\ぞ #\ゾ "ｿﾞ") (#\だ #\ダ "ﾀﾞ") (#\ぢ #\ヂ "ﾁﾞ")
-    (#\づ #\ヅ "ﾂﾞ") (#\で #\デ "ﾃﾞ") (#\ど #\ド "ﾄﾞ") (#\ば #\バ "ﾊﾞ")
-    (#\び #\ビ "ﾋﾞ") (#\ぶ #\ブ "ﾌﾞ") (#\べ #\ベ "ﾍﾞ") (#\ぼ #\ボ "ﾎﾞ")
-    (#\ぱ #\パ "ﾊﾟ") (#\ぴ #\ピ "ﾋﾟ") (#\ぷ #\プ "ﾌﾟ") (#\ぺ #\ペ "ﾍﾟ")
-    (#\ぽ #\ポ "ﾎﾟ")
-    (#\ぁ #\ァ #\ｧ) (#\ぃ #\ィ #\ｨ) (#\ぅ #\ゥ #\ｩ) (#\ぇ #\ェ #\ｪ) (#\ぉ #\ォ #\ｫ)
-    (#\っ #\ッ #\ｯ)
-    (#\ゃ #\ャ #\ｬ) (#\ゅ #\ュ #\ｭ) (#\ょ #\ョ #\ｮ)
-    (#\ゎ #\ヮ "ﾜ")
-    ("う゛" #\ヴ "ｳﾞ") (nil #\ヵ "ｶ") (nil #\ヶ "ｹ")
-    (#\　 #\ ) (#\， #\, #\､) (#\． #\｡) (#\、 #\, #\､) (#\。 #\｡)
-    (#\・ nil #\･) (#\： #\:) (#\； #\;) (#\？ #\?) (#\！ #\!) (#\゛ nil #\ﾞ)
-    (#\゜ nil #\ﾟ) (#\´ #\') (#\｀ #\`) (#\＾ #\^) (#\＿ #\_) (#\ー #\ｰ #\-)
-    (#\— #\-) (#\‐ #\-)
-    (#\／ #\/) (#\＼ #\\) (#\〜 #\~)  (#\｜ #\|) (#\‘ #\`) (#\’ #\') (#\“ #\")
-    (#\” #\")
-    (#\（ #\() (#\） #\)) (#\［ #\[) (#\］ #\]) (#\｛ #\{) (#\｝ #\})
-    (#\〈 #\<) (#\〉 #\>) (#\「 nil #\｢) (#\」 nil #\｣)
-    (#\＋ #\+) (#\− #\-) (#\＝ #\=) (#\＜ #\<) (#\＞ #\>)
-    (#\′ #\') (#\″ #\") (#\￥ #\\) (#\＄ #\$) (#\％ #\%)
-    (#\＃ #\#) (#\＆ #\&) (#\＊ #\*) (#\＠ #\@)))
-
-(DEFUN JAPANESE-HANKAKU-CHAR (CHAR)
-  (OR (DOLIST (X *JAPANESE-KANA-TABLE*)
-        (WHEN (MEMBER CHAR X)
-          (RETURN (CAR (LAST X)))))
-      CHAR))
-
-(DEFUN JAPANESE-HANKAKU-STRING (STRING)
-   (REDUCE (LAMBDA (ANS X)
-              (CONCATENATE 'STRING ANS (STRING (JAPANESE-HANKAKU-CHAR X))))
-           STRING
-           :INITIAL-VALUE ""))
-
-(DEFUN KEBUNRIDGE-WORD (WORD)
-  (LET ((LEN (LENGTH WORD)))
-    (REDUCE (LAMBDA (ANS X)
-              (CONCATENATE 'STRING ANS (STRING X)))
-            (CONCATENATE 'STRING
-                         (STRING (CHAR WORD 0))
-                         (ALEXANDRIA:SHUFFLE (SUBSEQ WORD 1 (1- LEN)))
-                         (STRING (CHAR WORD (1- LEN))))
-            :INITIAL-VALUE "")))
-
-#|(DEFUN GOOD-MORNING ()
-  (TWIT:UPDATE
-   (JAPANESE-HANKAKU-STRING
-    (CONCATENATE 'STRING
-                 "お"
-                 (KEBUNRIDGE-WORD "はようございま")
-                 "す!"))))|#
-
-
-#|(DEFUN OTSU ()
-  (TWIT:UPDATE
-   (JAPANESE-HANKAKU-STRING
-    (CONCATENATE 'STRING
-                 "お"
-                 (KEBUNRIDGE-WORD "つかれさまで")
-                 "す!"))))|#
-
-
 ;; CR
-(setf (symbol-function 'cr) #'cl:identity)
+(!(symbol-function 'cr) #'identity)
 
-(defun pr (&rest args)
+(de pr (&rest args)
   (princ
    (with-output-to-string (out)
      (mapc (lambda (x) (princ x out)) args))))
 
-(defun prn (&rest args)
+(de prn (&rest args)
   (apply #'pr args)
   (terpri))
 
-;; lispm
-(defparameter user-id ""
-  "The value of user-id is either the name of the logged in user,
-as a string, or else an empty string if there is no user logged in.
- It appears in the who-line.")
-
-;logout-list Variable
-(defparameter logout-list ()
-  "The value of logout-list is a list of forms
-which are evaluated when a user logs out.")
-
-(defun login (name &optional (load-init))
-  "If anyone is logged into the machine, login logs him out.
- (See logout .) Then user-id is set from name.
- Finally login attempts to find your INIT file.
-It first looks in \"user-id ; .LISPM (INIT)\", then in \"(INIT);
-user-id .LISPM\", and finally in the default init file
- \"(INIT); * .LISPM\". When it finds one of these that exists,
- it loads it in. login returns t ."
-  (setq user-id (string name))
-  (unless load-init
-    (load (merge-pathnames "lispm.init" (user-homedir-pathname)))))
-
-(defun logout (&optional name)
-  "First, logout evaluates the forms on logout-list.
- Then it tries to find a file to run, looking first in
-\"user-id ; .LSPM_ (INIT)\", then in \"(INIT); user-id .LSPM_\",
-and finally in the default file \"(INIT); * .LSPM_\".
-If and when it finds one it these that exists,
-it loads it in. Then it sets user-id to an empty string and
- logout-list to nil , and returns t ."
-  (declare (ignore name))
-  (setq user-id "")
-  (eval `(progn ,@logout-list))
-  (setq logout-list () ))
-
-;(logout)
-
-(defmacro setq-return-undo (var val)
-;  "setqを実行し、実行内容をアンドゥする式を返す。2値目は、setqの返り値"
-  `(let ((undo (if (boundp ',var)
-		   '(setq ,var ',(and (boundp var) (symbol-value var)))
-		   '(makunbound ',var))))
-     (push undo logout-list)
-     (values undo (setq ,var ,val))))
-
-(defmacro login-setq (&rest form)
-  "login-setq is like setq except that it puts a setq form on
- logout-list to set the variables to their previous values."
-  `(progn
-     ,@(do ((l form (cddr l))
-	    (res () (cons `(nth-value 1 (setq-return-undo ,(car l) ,(cadr l)))
-			  res)))
-	   ((endp l) (nreverse res)))))
-
-;(login-setq foo 33 bar 44)
-
-;login-eval x
-(defmacro login-eval (&rest form)
-  "login-eval is used for functions which are \"meant to be called\"
-from INIT files, such as eine:ed-redefine-keys,
-which conveniently return a form to undo what they did.
- login-eval adds the result of the form x to the logout-list."
-  `(progn
-     ,@(loop :for l :in form
-	     :collect `(push ,l logout-list))))
-
-;(login-eval (setq-return-undo foo 3))
-
-;(login-setq foo 33)
-;(setq-return-undo foo 33)
-;logout-list
-;(logout)
-
-;(unintern 'foo)
-
-
-#|(DEFUN PRINT-ALL-TWEETS ()
-  (LET ((ANS () ))
-    (DOLIST (USER *TWITTER-USERS*)
-      (LET ((TWIT:*TWITTER-USER* USER))
-        (SETQ ANS
-              (NCONC (twit:twitter-op :friends-timeline)
-                     ANS))))
-    (TWIT:PRINT-TWEETS
-     (SORT (DELETE-DUPLICATES ANS :KEY #'TWIT::TWEET-ID)
-           #'<
-           :KEY #'TWIT::TWEET-ID))
-    NIL))|#
-
-#|(IN-PACKAGE :TWIT)
-#+SBCL (PROGN
-  ;; patch
-  ;; バイナリで受けないとこけることがある
-  (defun get-tinyurl (url)
-    "Get a TinyURL for the given URL. Uses the TinyURL API service.
-   (c) by Chaitanaya Gupta via cl-twit"
-    (multiple-value-bind (body status-code)
-        (funcall *http-request-function*
-                 *tinyurl-url*
-                 :parameters `(("url" . ,url))
-                 :force-binary 'T)
-      (if (= status-code +http-ok+)
-          (SB-EXT:OCTETS-TO-STRING body)
-          (error 'http-error
-                 :status-code status-code
-                 :url url
-                 :body body)))))
-(IN-PACKAGE :G000001)
-|#
-
-(DEFUN GET-CALENDAR-JSON (UT)
-  (LET ((REQUEST-URL
-         (KMRCL:MAKE-URL
-          "full"
-          :BASE-DIR "http://www.google.com/calendar/feeds/japanese@holiday.calendar.google.com/public/"
-          :VARS `(("start-min" . ,(XYZZY:FORMAT-DATE-STRING "%Y-%m-%d" UT))
-                  ("start-max" . ,(XYZZY:FORMAT-DATE-STRING
-                                   "%Y-%m-%d"
-                                   (+ UT (* 24 60 60))))
-                  ("max-results" . "1")
-                  ("alt" . "json-in-script")
-                  ("callback" . "handleJson")))))
-    (STRING-TRIM "handleJson();"
-                 (#-SBCL TRIVIAL-UTF-8:UTF-8-BYTES-TO-STRING
-                  #+SBCL SB-EXT:OCTETS-TO-STRING
-                  (DRAKMA:HTTP-REQUEST REQUEST-URL :FORCE-BINARY 'T)))))
-
-(DEFUN -> (LIST &REST KEYS)
-  (IF (ENDP KEYS)
-      LIST
-      (KMRCL:AWHEN (FIND (CAR KEYS) LIST :KEY #'ZL:CAR-SAFE)
-        (APPLY #'-> KMRCL:IT (CDR KEYS)))))
-
-(DEFUN HOLIDAY-P (&OPTIONAL (UT (GET-UNIVERSAL-TIME)))
-  (LET ((DAY (NTH-VALUE 6 (DECODE-UNIVERSAL-TIME UT))))
-    (OR (<= 5 DAY)                      ; (sat 5) (sun 6)
-        ;; google calencar
-        (< 0
-           (CDR
-            (-> (JSON:DECODE-JSON-FROM-STRING (GET-CALENDAR-JSON UT))
-                :FEED
-                :OPEN-SEARCH$TOTAL-RESULTS
-                :$T))))))
-
 #+SBCL
-(PROGN
+#|(PROGN
   (EXECUTOR:DEFINE-EXECUTABLE SCP)
 
   (DEFMACRO WITH-OUTPUT-TO-REMOTE-FILE ((STREAM PATH) &BODY BODY)
@@ -321,7 +53,7 @@ which conveniently return a form to undo what they did.
                          NIL)
          (WHEN (CL-FAD:FILE-EXISTS-P ,TEMP-FILE-NAME)
            (DELETE-FILE ,TEMP-FILE-NAME)))))
-  )
+  )|#
 
 (DEFUN SED (START-PAT END-PAT NEW
             &KEY (IN *STANDARD-INPUT*) (OUT *STANDARD-OUTPUT*))
@@ -336,28 +68,10 @@ which conveniently return a form to undo what they did.
                     ((NOT OPEN)
                      (WRITE-LINE LINE OUT))))))
 
-(defun |#/-READER| (stream char arg)
-  (declare (ignore char arg))
-  (let ((g (gensym))
-        (re (ppcre:regex-replace-all
-             "\\\\/"
-             (collect 'string
-                      (choose
-                       (let ((prev nil))
-                         (until-if (lambda (c)
-                                     (cond ((and (eql #\/ c)
-                                                 (not (eql #\\ prev)))
-                                            'T)
-                                           (:else (setq prev c)
-                                                  nil)))
-                                   (scan-stream stream #'read-char)))))
-             "/")))
-    `(lambda (,g)
-       (ppcre:scan ,re ,g))))
-
-;(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
-
 (progn
+  ;; ------------------------------------------------------------------------
+  ;; macro expand
+  ;; ------------------------------------------------------------------------
   (defun uninterned-symbols (tree)
     (remove-if-not
      (lambda (x)
@@ -433,9 +147,6 @@ which conveniently return a form to undo what they did.
                     :external-format :sjis)
      ,@body))
 
-
-;(defmacro w/> )
-
 (defmacro with-< (spec &body body)
   (etypecase spec
     (cons (destructuring-bind (in filename &rest args)
@@ -484,51 +195,39 @@ which conveniently return a form to undo what they did.
                        :if-exists :append)
         ,@body))))
 
-#+sbcl
-(progn
-  (handler-case
-      (cl:defpackage :generic
-        (:use :sequence)
-        (:nicknames :g))
-    (sb-int:package-at-variance (&rest arg) (print (list arg))))
+(defun show-packages (&aux (out *standard-output*))
+  (letS* ((p (Elist (sort
+                       (list-all-packages) #'string< :key #'package-name)))
+            (i (scan-range :from 1)) )
+      (Rignore (format out
+                       "~4,'0D: ~A ~:[~;~:*~A~]~%"
+                       i
+                       (package-name p)
+                       (package-nicknames p) ))))
 
-  (do-symbols (s :sequence)
-    (multiple-value-bind (sym stat)
-                         (find-symbol (string s) :sequence)
-      (if (eq :external stat)
-          (export sym :g)))))
-
-(defun show-packages ()
-  (letS* ((p (Elist (sort (list-all-packages) #'string< :key #'package-name)))
-          (i (scan-range :from 1)))
-    (Rignore
-     (progn
-       (format T
-               "~4,'0D: ~A ~:[~;~:*~A~]~%"
-               i
-               (package-name p)
-               (package-nicknames p))))))
-
-;; (nth-value 1 ...) => (\1 ...)
+;;; --------------------------------------------------------------------------
+;;; (nth-value 1 ...) => (\1 ...)
+;;; --------------------------------------------------------------------------
 (dotimes (i 10)
   (eval `(defmacro ,(intern (format nil "~D" i)) (form)
            `(nth-value ,,i ,form))))
 
-
+;;; --------------------------------------------------------------------------
 ;;; ADD-TEST-FN
-(defvar *foo-operators*
+;;; --------------------------------------------------------------------------
+#|(defvar *foo-operators*
   (atap ()
     ;; clパッケージから:testを受け付けるオペレーターを探す
     (do-symbols (sym :cl)
       (when (and (fboundp sym)
                  (member 'test (member '&key (sl:multiple-value-do   (swank::arglist sym)))
                          :key #'princ-to-string :test #'string-equal))
-        (push sym it)))))
+        (push sym it)))))|#
 
-(defun get-test-fn (expr)
-  (second (member :test expr)))
+#|(defun get-test-fn (expr)
+  (second (member :test expr)))|#
 
-(defun add-test-fn (expr test-fn)
+#|(defun add-test-fn (expr test-fn)
   (labels ((*self (expr)
              (destructuring-bind (&optional car &rest cdr) expr
                (cond ((null expr) () )
@@ -544,11 +243,11 @@ which conveniently return a form to undo what they did.
                           `(,car ,@(*self cdr) :test ,test-fn)))
                      ;;
                      ('T (cons car (*self cdr)))))))
-    (*self expr)))
+    (*self expr)))|#
 
-(defmacro with-default-test (test &body body)
+#|(defmacro with-default-test (test &body body)
   `(progn
-     ,@(add-test-fn body test)))
+     ,@(add-test-fn body test)))|#
 
 (defmacro maplet ((&rest bindings) &body body)
   `(mapcar (lambda (,@(mapcar #'car bindings))
@@ -556,181 +255,11 @@ which conveniently return a form to undo what they did.
            ,@(mapcar #'cadr bindings)))
 
 (defmacro with-output-to-browser ((stream &key (browser "firefox")) &body body)
-  (let ((filename (format nil "/tmp/~A" (gensym "TEMPFILE-"))))
+  (let ((filename (format nil "/tmp/~A.html" (gensym "TEMPFILE-"))))
     `(macrolet ((#0=#:command-output-status (form) `(nth-value 2 ,form)))
        (with-open-file (,stream ,filename :direction :output :if-exists :supersede)
          ,@body)
        (zerop (#0# (kl:command-output "~A ~A" ,browser ,filename))))))
 
-;;; from cadr system 99 sys2;setf.lisp.1
-
-;;; Handle SETF of backquote expressions, for decomposition.
-;;; For example, (SETF `(A ,B (D ,XYZ)) FOO)
-;;; sets B to the CADR and XYZ to the CADADDR of FOO.
-;;; The constants in the pattern are ignored.
-
-;;; Backquotes which use ,@ or ,. other than at the end of a list
-;;; expand into APPENDs or NCONCs and cannot be SETF'd.
-
-;;; This was used for making (setf `(a ,b) foo) return t if
-;;; foo matched the pattern (had A as its car).
-;;; The other change for reinstalling this
-;;; would be to replace the PROGNs with ANDs
-;;; in the expansions produced by (LIST SETF), etc.
-;;;(DEFUN SETF-MATCH (PATTERN OBJECT)
-;;;  (COND ((NULL PATTERN) T)
-;;;	((SYMBOLP PATTERN)
-;;;	 `(PROGN (SETQ ,PATTERN ,OBJECT) T))
-;;;	((EQ (CAR PATTERN) 'QUOTE)
-;;;	 `(EQUAL ,PATTERN ,OBJECT))
-;;;	((MEMQ (CAR PATTERN)
-;;;	       '(CONS LIST LIST*))
-;;;	 `(SETF ,PATTERN ,OBJECT))
-;;;	(T `(PROGN (SETF ,PATTERN ,OBJECT) T))))
-
-;;; This is used for ignoring any constants in the
-;;; decomposition pattern, so that (setf `(a ,b) foo)
-;;; always sets b and ignores a.
-(defun setf-match (pattern object)
-  (cond ((eq (zl:car-safe pattern) 'quote)
-	 nil)
-	(t `(setf ,pattern ,object))))
-
-(without-package-locks
-  (define-setf-expander list (&rest elts)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              (do ((i 0 (1+ i))
-                   (accum)
-                   (args elts (cdr args)))
-                  ((null args)
-                   (cons 'progn (nreverse accum)))
-                (push (setf-match (car args) `(nth ,i ,storevar)) accum))
-              `(incorrect-structure-setf list . ,elts)))))
-
-#+sbcl
-(without-package-locks
-  (define-setf-expander sb-impl::backq-list (&rest elts)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              (do ((i 0 (1+ i))
-                   (accum)
-                   (args elts (cdr args)))
-                  ((null args)
-                   (cons 'progn (nreverse accum)))
-                (push (setf-match (car args) `(nth ,i ,storevar)) accum))
-              `(incorrect-structure-setf list . ,elts)))))
-
-(without-package-locks
-  (define-setf-expander list* (&rest elts)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              (do ((i 0 (1+ i))
-                   (accum)
-                   (args elts (cdr args)))
-                  ((null args)
-                   (cons 'progn (nreverse accum)))
-                (cond ((cdr args)
-                       (push (setf-match (car args) `(nth ,i ,storevar)) accum))
-                      (t (push (setf-match (car args) `(nthcdr ,i ,storevar)) accum))))
-              `(incorrect-structure-setf list* . ,elts)))))
-
-#+sbcl
-(without-package-locks
-  (define-setf-expander sb-impl::backq-list* (&rest elts)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              (do ((i 0 (1+ i))
-                   (accum)
-                   (args elts (cdr args)))
-                  ((null args)
-                   (cons 'progn (nreverse accum)))
-                (cond ((cdr args)
-                       (push (setf-match (car args) `(nth ,i ,storevar)) accum))
-                      (t (push (setf-match (car args) `(nthcdr ,i ,storevar)) accum))))
-              `(incorrect-structure-setf list* . ,elts)))))
-
-(without-package-locks
-  (define-setf-expander cons (car cdr)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              `(progn ,(setf-match car `(car ,storevar))
-                      ,(setf-match cdr `(cdr ,storevar)))
-              `(incorrect-structure-setf cons ,car ,cdr)))))
-
-#+sbcl
-(without-package-locks
-  (define-setf-expander sb-impl::backq-cons (car cdr)
-    (let ((storevar (gensym)))
-      (values nil nil (list storevar)
-              `(progn ,(setf-match car `(car ,storevar))
-                      ,(setf-match cdr `(cdr ,storevar)))
-              `(incorrect-structure-setf cons ,car ,cdr)))))
-
-(defmacro incorrect-structure-setf (&rest args)
-  (error "You cannot SETF the place ~S~% in a way that refers to its old contents." args))
-
-(defun use-package-soft (package-to-use &optional (package (sb-int:sane-package)))
-  (let ((not-imported () ))
-    (do-external-symbols (s package-to-use)
-      (if (find-symbol (string s))
-          (push s not-imported)
-          (import s package)))
-    not-imported))
-
-;; pkg-bind
-
-(defclass intern-form ()
-  ((name :initarg :name)
-   (package :initarg :package)))
-
-
-(defmethod print-object ((obj intern-form) stream)
-  (format stream
-          "#.(CL:INTERN ~S ~S)"
-          (slot-value obj 'name)
-          (slot-value obj 'package)))
-
-;(make-instance 'intern-form :name "FOO" :package "CL")
-;=> #.(CL:INTERN "FOO" "CL")
-
-(defun up-symbol (elt pkg)
-  (typecase elt
-    (symbol
-       (let ((name (string elt)))
-         (make-instance 'intern-form
-                  :name name
-               :package (package-name
-                         (let ((elt-pkg (symbol-package elt)))
-                           (cond ((eq elt-pkg (find-package pkg))
-                                  pkg)
-                                 ;;
-                                 ((and (eq elt-pkg (find-package *package*))
-                                       (not (find-symbol pkg)))
-                                  pkg)
-                                 ;;
-                                 ('T elt-pkg)))))))
-    ;;
-    (otherwise elt)))
-
-(defun symbol-to-intern-form (tree pkg)
-  (cond ((null tree)
-         tree)
-        ;;
-        ((atom (car tree))
-         (let ((elt (car tree)))
-           (cons (if (eq 'pkg-bind elt)
-                     'pkg-bind
-                     (up-symbol elt pkg))
-                 (symbol-to-intern-form (cdr tree) pkg))))
-        ;;
-        ('T (cons (symbol-to-intern-form (car tree) pkg)
-                  (symbol-to-intern-form (cdr tree) pkg)))))
-
-(defmacro pkg-bind (pkg &body body)
-  `(progn
-     ,@(read-from-string
-        (write-to-string
-         (symbol-to-intern-form body (package-name pkg))))))
 
 ;; eof
