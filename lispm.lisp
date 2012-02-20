@@ -63,8 +63,8 @@ from INIT files, such as eine:ed-redefine-keys,
 which conveniently return a form to undo what they did.
  login-eval adds the result of the form x to the logout-list."
   `(progn
-     ,@(loop :for l :in form
-	     :collect `(push ,l logout-list))))
+     ,@(cl:loop :for l :in form
+                :collect `(push ,l logout-list))))
 
 
 ;;; eof

@@ -3,7 +3,9 @@
 ;;; --------------------------------------------------------------------------
 ;;; use-package-soft
 ;;; --------------------------------------------------------------------------
-(defun use-package-soft (package-to-use &optional (package (sb-int:sane-package)))
+(defun use-package-soft (package-to-use
+                         &optional (package #+sbcl (sb-int:sane-package)
+                                            #-sbcl *package*))
   (let ((not-imported () ))
     (do-external-symbols (s package-to-use)
       (if (find-symbol (string s))

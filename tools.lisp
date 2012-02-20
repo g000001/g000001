@@ -73,3 +73,85 @@
                  :body body)))))
  (IN-PACKAGE :G000001)
 |#
+
+(defun get-title (uri)
+  (with-input-from-string (str (decode-jp
+                                (drakma:http-request uri
+                                                     :force-binary 'T)))
+    (do ((line (read-line str nil :eof) (read-line str nil :eof)))
+	((eq :eof line))
+      (ppcre:register-groups-bind (title)
+                                  ("<title>\(.*\)</title>" line)
+	(when title
+	  (return title))))))
+
+(defun choose-elt (item shtml)
+  (collect
+    (choose-if (lambda (elt)
+                 (and (consp elt)
+                      (equal item (car elt)) ))
+               (scan-lists-of-lists shtml) )))
+
+
+(defun title-filter (str)
+  (ppcre:regex-replace-all "(&nbsp;|\\n|\\s+)"
+                           str
+                           ""))
+
+(defun get-title (uri)
+  (with-input-from-string (str (decode-jp
+                                (drakma:http-request uri
+                                                     :force-binary 'T)))
+    (first
+     (mapcar (kl:compose #'title-filter #'second)
+             (choose-elt :title
+                         (html-parse:parse-html str))))))
+
+(defun str (&rest args)
+  (format nil "~{~A~^ ~}" args))
+
+;;; LispWorksだと文字化け(なんでだろう)base-charの扱い?
+#|(de title+url (url)
+  (str (get-title url)
+       "〖" url "〗"))|#
+
+;;;; (de title+url (url)
+;;;;   (format nil
+;;;;           "~A 〖 ~A 〗"
+;;;;           (get-title url)
+;;;;           url))
+
+(de title+url (url)
+  (format nil
+          "~A 【 ~A 】"
+          (get-title url)
+          url))
+
+(de yonderu-tw (&rest urls &aux (no. 0))
+  (tw (format nil
+              "読んでる→~:{~A:~A 〖 ~A 〗~^ ~}"
+              (mapcar (lambda (u)
+                        `(,(incf no.) ,(get-title u) ,u))
+                      urls))))
+
+
+(de yonda (url)
+  (tw (format nil "読んだ: ~A" (title+url url))))
+
+(defmacro pa (pkg)
+  `(in-package ,pkg))
+
+(de ql (name)
+  (ql:quickload name))
+
+(de qapropos (name)
+  (ql-dist:system-apropos (string-downcase name)))
+
+
+(de delete-package* (pkg)
+  (let* ((pkg (find-package pkg))
+         (publ (package-used-by-list pkg)))
+    (cons (prog1 pkg (delete-package pkg))
+          (mapc #'delete-package publ))))
+
+;;; eof

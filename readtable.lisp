@@ -20,3 +20,8 @@
        (ppcre:scan ,re ,g))))
 
 ;(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
+
+(set-macro-character #\{
+                     (lambda (srm char)
+                       (declare (ignore char))
+                       (sb-impl::read-string srm #\})))

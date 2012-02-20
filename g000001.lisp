@@ -13,6 +13,10 @@
 (kl:defconstant* fmt-hr "~V@{~A~:*~}~*~%"
   "fmt-hr (length string)")
 
+(kl:defconstant* speed-speed-speed
+  '(OPTIMIZE (SAFETY 0) (SPEED 3) (DEBUG 0)))
+
+
 ;(format nil fmt-hr 80 "=")
 ;=> "================================================================================
 ;   "
@@ -57,7 +61,7 @@
 
 (DEFUN SED (START-PAT END-PAT NEW
             &KEY (IN *STANDARD-INPUT*) (OUT *STANDARD-OUTPUT*))
-  (LOOP :WITH OPEN
+  (cl:LOOP :WITH OPEN
         :FOR LINE := (READ-LINE IN NIL NIL) :WHILE LINE
         :DO (PROGN
               (WHEN (SEARCH START-PAT LINE)
@@ -94,7 +98,9 @@
     (let ((symtab (count-symbol-names
                    (remove-duplicates
                     (uninterned-symbols
-                     (sb-cltl2:macroexpand-all form))))))
+                     (#+sbcl sb-cltl2:macroexpand-all
+                      #+lispworks walker:walk-form form
+                      form))))))
       (fare-utils:cons-tree-map
        (lambda (x)
          (cond
@@ -125,7 +131,9 @@
             (intern (string-downcase (symbol-name x))))
            ;; それ以外は、スルー
            ('T x)))
-       (sb-cltl2:macroexpand-all form))))
+       (#+sbcl sb-cltl2:macroexpand-all
+        #+lispworks walker:walk-form
+        form))))
 
   (defun mexp-string (form)
     (write-to-string (mexp (read-from-string form)))) )
@@ -195,6 +203,7 @@
                        :if-exists :append)
         ,@body))))
 
+#+sbcl
 (defun show-packages (&aux (out *standard-output*))
   (letS* ((p (Elist (sort
                        (list-all-packages) #'string< :key #'package-name)))
@@ -245,9 +254,9 @@
                      ('T (cons car (*self cdr)))))))
     (*self expr)))|#
 
-#|(defmacro with-default-test (test &body body)
+(defmacro with-default-test (test &body body)
   `(progn
-     ,@(add-test-fn body test)))|#
+     ,@(add-test-fn body test)))
 
 (defmacro maplet ((&rest bindings) &body body)
   `(mapcar (lambda (,@(mapcar #'car bindings))
@@ -261,5 +270,211 @@
          ,@body)
        (zerop (#0# (kl:command-output "~A ~A" ,browser ,filename))))))
 
+(defmacro with-html-output-to-browser ((out) &body body)
+  `(with-output-to-browser (,out)
+     (who:with-html-output (,out ,out :prologue T :indent T)
+       ,@body)))
+
+
+(defmacro coll (&body body)
+  (let ((tem (gensym "TEM-"))
+        (ans (gensym "ANS-")))
+    `(macrolet ((yield (&body body)
+                  `(setq ,',tem (cdr (rplacd ,',tem (list (progn ,@body)))))))
+       (let* ((,ans (list nil))
+              (,tem ,ans))
+         ,@body
+         (cdr ,ans)))))
+
+
+#-ecl (defun gauche-xref->exports (str)
+  (mapcar #'kl:ensure-keyword
+          (srfi-13:string-tokenize str
+                                   (srfi-14:char-set-difference
+                                    char-set:graphic
+                                    (srfi-14:string->char-set  ",") ))))
+
+#|(defun qq-expand-list (x depth)
+  (if (consp x)
+      (case (car x)
+        ((quasiquote)
+         `(list (cons ',(car x) ,(qq-expand (cdr x) (+ depth 1)))))
+        ((unquote unquote-splicing)
+         (cond ((> depth 0)
+                `(list (cons ',(car x) ,(qq-expand (cdr x) (- depth 1)))))
+               ((eq 'unquote (car x))
+                `(list . ,(cdr x)))
+               (:else
+                `(append . ,(cdr x)))))
+        (otherwise
+         `(list (append ,(qq-expand-list (car x) depth)
+                        ,(qq-expand (cdr x) depth)))))
+      `'(,x)))|#
+
+(defun qq-expand-list (x depth)
+  (if (consp x)
+      (case (car x)
+        ((quasiquote)
+         (list (quote list)
+               (list 'cons (list (quote quote) (car x))
+                     (qq-expand (cdr x) (+ depth 1)))))
+        ((unquote unquote-splicing)
+         (cond ((> depth 0)
+                (list (quote list)
+                      (list (quote cons)
+                            (list (quote quote)
+                                  (car x))
+                            (qq-expand (cdr x) (- depth 1)))))
+               ((eq (quote unquote) (car x))
+                (list* (quote list)
+                       (cdr x)))
+               (:else
+                (list* (quote append)
+                       (cdr x)))))
+        (otherwise
+         (list (quote list)
+               (list (quote append)
+                     (qq-expand-list (car x) depth)
+                     (qq-expand (cdr x) depth)))))
+      (list (quote quote)
+            (list x))))
+
+#|(defun qq-expand (x depth)
+  (if (consp x)
+      (case (car x)
+        ((quasiquote)
+         `(cons ',(car x) ,(qq-expand (cdr x) (+ depth 1))))
+        ((unquote unquote-splicing)
+         (cond ((> depth 0)
+                `(cons ',(car x) ,(qq-expand (cdr x) (- depth 1))))
+               ((and (eq 'unquote (car x))
+                     (not (null (cdr x)))
+                     (null (cddr x)))
+                (cadr x))
+               (:else
+                (error "Illegal"))))
+        (otherwise
+         `(append ,(qq-expand-list (car x) depth)
+                  ,(qq-expand (cdr x) depth))))
+      `',x))|#
+
+(defun qq-expand (x depth)
+  (if (consp x)
+      (case (car x)
+        ((quasiquote)
+         (list (quote cons)
+               (list (quote quote)
+                     (car x))
+               (qq-expand (cdr x) (+ depth 1))))
+        ((unquote unquote-splicing)
+         (cond ((> depth 0)
+                (list (quote cons)
+                      (list (quote quote)
+                            (car x))
+                      (qq-expand (cdr x) (- depth 1))))
+               ((and (eq (quote unquote) (car x))
+                     (not (null (cdr x)))
+                     (null (cddr x)))
+                (cadr x))
+               (:else
+                (error "Illegal"))))
+        (otherwise
+         (list (quote append)
+               (qq-expand-list (car x) depth)
+               (qq-expand (cdr x) depth))))
+      (list (quote quote) x)))
+
+
+(defmacro quasiquote (&whole form expr)
+  (if (eq (quote quasiquote) (car form))
+      (qq-expand expr 0)
+      form))
+
+#|(defmacro rb (vars &body body)
+  "Ensures unique names for all the variables in a groups of forms."
+  (cl:loop for var in vars
+	for name = (gensym (symbol-name var))
+	collect (quasiquote ((unquote name) (unquote var))) into renames
+	collect (quasiquote
+                  (quasiquote ((unquote (unquote var))
+                               (unquote (unquote name)) ))) into temps
+	finally (return
+                  (quasiquote
+                   (let (unquote renames)
+                     (lispworks:with-unique-names (unquote vars)
+                       (quasiquote
+                        (let ((unquote (unquote-splicing temps)))
+                          (unquote (unquote-splicing body)) ))))))))|#
+
+#|(defmacro rb (vars &body body)
+  "Ensures unique names for all the variables in a groups of forms."
+  (cl:loop for var in vars
+	for name = (gensym (symbol-name var))
+	collect `(,name ,var) into renames
+	collect ``(,,var ,,name ) into temps
+	finally (return
+                  `(let ,renames
+                     (lispworks:with-unique-names ,vars
+                       `(let (,,@temps)
+                          ,,@body ))))))|#
+
+
+(defun enable-quasiquote ()
+  (set-macro-character #\,
+                       (lambda (stream char)
+                         (declare (ignore char))
+                         (let ((next (peek-char t stream t nil t)))
+                           (if (char= #\@ next)
+                               (progn
+                                 (read-char stream t nil t)
+                                 (list (quote unquote-splicing)
+                                       (read stream t nil t) ))
+                               (list (quote unquote)
+                                     (read stream t nil t) )))))
+  (set-macro-character #\`
+                       (lambda (stream char)
+                         (declare (ignore char))
+                         (list (quote quasiquote)
+                               (read stream t nil t) ))))
+
+
+
+#|(defmacro rb (vars &body body)
+  "Ensures unique names for all the variables in a groups of forms."
+  (cl:loop for var in vars
+	for name = (gensym (symbol-name var))
+	collect (quasiquote ((unquote name) (unquote var))) into renames
+	collect (quasiquote
+                  (quasiquote ((unquote (unquote var))
+                               (unquote (unquote name)) ))) into temps
+	finally (return
+                  (quasiquote
+                   (let (unquote renames)
+                     (lispworks:with-unique-names (unquote vars)
+                       (quasiquote
+                        (let ((unquote (unquote-splicing temps)))
+                          (unquote (unquote-splicing body)) ))))))))|#
+
+
+
+
+(macrolet ((def ()
+               `(progn
+                  ,@(with-series-implicit-map
+                      (collect
+                        (let ((a (code-char
+                                  (subseries (scan-range :from 65) 0 26))))
+                          `(defmacro ,(intern (format nil "^~A" a)) (&body body)
+                             `(lambda (,',(intern (string a))) ,@body) )))))))
+  (def) )
+
+(defmacro ^_ (&body body)
+  `(lambda (_)
+     (declare (ignore _))
+     ,@body))
+
+(defmacro ^ ((&rest args) &body body)
+  `(lambda (,@args)
+     ,@body))
 
 ;; eof

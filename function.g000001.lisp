@@ -65,6 +65,7 @@
                 (push (setf-match (car args) `(nth ,i ,storevar)) accum))
               `(incorrect-structure-setf list . ,elts)))))
 
+#+sbcl
 (without-package-locks
   (define-setf-expander list* (&rest elts)
     (let ((storevar (gensym)))
@@ -94,6 +95,7 @@
                       (t (push (setf-match (car args) `(nthcdr ,i ,storevar)) accum))))
               `(incorrect-structure-setf list* . ,elts)))))
 
+#+sbcl
 (without-package-locks
   (define-setf-expander cons (car cdr)
     (let ((storevar (gensym)))
@@ -113,5 +115,3 @@
 
 (defmacro incorrect-structure-setf (&rest args)
   (error "You cannot SETF the place ~S~% in a way that refers to its old contents." args))
-
-

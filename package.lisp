@@ -1,5 +1,14 @@
 (in-package :cl-user)
-;(delete-package :g000001)
+
+(defpackage :root.package.g000001
+  (:use :cl)
+  (:export :*package-path*
+           :pkg-bind
+           :use-package-soft
+           :show-packages))
+
+(defpackage :root.function.g000001
+  (:use :cl #+sbcl :sb-ext))
 
 (defpackage :root.user.g000001
   (:use :tao
@@ -26,25 +35,17 @@
                           . #.(cl:let ((tao-symbols '() )
                                        (cl-symbols '() ) )
                                 (cl:do-external-symbols (s :cl)
-                                  (cl:push s cl-symbols) )
+                                  (unless (member s '(cl:loop))
+                                    (cl:push s cl-symbols)) )
                                 (cl:do-external-symbols (s :tao)
                                   (cl:push s tao-symbols) )
                                 (cl:set-difference cl-symbols tao-symbols) ))
   (:export :with->
            :with-<
            :with->>
-           :pkg-bind ))
-
-(defpackage :root.package.g000001
-  (:use :cl)
-  (:export :*package-path*
            :pkg-bind
-           :use-package-soft
-           :show-packages))
-
-(defpackage :root.function.g000001
-  (:use :cl #+sbcl :sb-ext))
-
+           :with-output-to-browser
+           :with-html-output-to-browser))
 
 (in-package :g1)
 
