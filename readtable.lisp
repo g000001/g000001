@@ -21,7 +21,19 @@
 
 ;(set-dispatch-macro-character #\# #\/ #'|#/-READER|)
 
-(set-macro-character #\{
-                     (lambda (srm char)
-                       (declare (ignore char))
-                       (sb-impl::read-string srm #\})))
+(defreadtable :g1
+  (:merge :tao)
+  (:macro-char #\{ (lambda (srm char)
+                     (declare (ignore char))
+                     #+sbcl (sb-impl::read-string srm #\})
+                     #+lispworks (system::read-string srm #\})
+                     ))
+  (:dispatch-macro-char  #\# #\Z
+                             #'series::series-reader)
+  (:dispatch-macro-char #\# #\M
+                             #'series::abbreviated-map-fn-reader)
+  ;; (:macro-char #\^ #'tao-read-toga)
+  ;; (:macro-char #\. #'read-|.| 'T)
+  (:case :upcase))
+
+;;; eof
