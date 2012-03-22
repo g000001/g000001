@@ -19,6 +19,7 @@
         :named-readtables
         :root.package.g000001
         :root.function.g000001
+        :snow-match
         )
   (:nicknames :g1 :g000001)
   #-allegro (:import-from :cl-user
