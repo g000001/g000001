@@ -1,5 +1,5 @@
 (in-package :g1)
-(in-readtable :tao)
+(in-readtable :g1)
 
 (setq *PACKAGE-PATH* (LIST :SHIBUYA.LISP
                            :FARE-UTILS
@@ -23,7 +23,8 @@
 
 
 ;; CR
-(!(symbol-function 'cr) #'identity)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (!(symbol-function 'cr) #'identity))
 
 (de pr (&rest args)
   (princ
@@ -94,7 +95,7 @@
     (ppcre:regex-replace-all "-{0,1}\\d+$"
                              (symbol-name sym)
                              ""))
-  (defun mexp (form)
+  #|(defun mexp (form)
     (let ((symtab (count-symbol-names
                    (remove-duplicates
                     (uninterned-symbols
@@ -133,11 +134,33 @@
            ('T x)))
        (#+sbcl sb-cltl2:macroexpand-all
         #+lispworks walker:walk-form
-        form))))
+        form))))|#
+  :-------------------------)
 
-  (defun mexp-string (form)
-    (write-to-string (mexp (read-from-string form)))) )
+(defun mexp-string (form)
+  (let ((swank::*macroexpand-printer-bindings*
+         (cons '(*print-gensym*)
+               swank::*macroexpand-printer-bindings* ) ))
+    (swank:swank-macroexpand-all form) ))
 
+
+#+sbcl
+(defun source-transform (form &optional (env (sb-kernel:make-null-lexenv)))
+  (if (and (consp form)
+           (symbolp (car form))
+           (not (special-operator-p (car form))) )
+      (let ((sb-c::*lexenv* env))
+        (or (and (fboundp (car form))
+                 (funcall (sb-int:info :function :source-transform (car form))
+                          form ))
+            (values form t) ))
+      (values form T) ))
+
+(defun source-transform-string (form-string)
+  (let ((swank::*macroexpand-printer-bindings*
+         (cons '(*print-gensym*)
+               swank::*macroexpand-printer-bindings* ) ))
+    (swank::apply-macro-expander #'source-transform form-string) ))
 
 (defmacro w/outfile (out filename &body body)
   `(with-open-file (,out
@@ -276,6 +299,14 @@
        ,@body)))
 
 
+(defun fold-tree-right (proc seed tree)
+  (labels ((rec (tree seed)
+             (cond ((null tree) seed)
+                   ((consp tree) (rec (car tree) (rec (cdr tree) seed)))
+                   (t (funcall proc tree seed)))))
+    (rec tree seed)))
+
+
 (defmacro coll (&body body)
   (let ((tem (gensym "TEM-"))
         (ans (gensym "ANS-")))
@@ -287,7 +318,8 @@
          (cdr ,ans)))))
 
 
-#-ecl (defun gauche-xref->exports (str)
+#-ecl
+(defun gauche-xref->exports (str)
   (mapcar #'kl:ensure-keyword
           (srfi-13:string-tokenize str
                                    (srfi-14:char-set-difference
@@ -390,35 +422,6 @@
       (qq-expand expr 0)
       form))
 
-#|(defmacro rb (vars &body body)
-  "Ensures unique names for all the variables in a groups of forms."
-  (cl:loop for var in vars
-	for name = (gensym (symbol-name var))
-	collect (quasiquote ((unquote name) (unquote var))) into renames
-	collect (quasiquote
-                  (quasiquote ((unquote (unquote var))
-                               (unquote (unquote name)) ))) into temps
-	finally (return
-                  (quasiquote
-                   (let (unquote renames)
-                     (lispworks:with-unique-names (unquote vars)
-                       (quasiquote
-                        (let ((unquote (unquote-splicing temps)))
-                          (unquote (unquote-splicing body)) ))))))))|#
-
-#|(defmacro rb (vars &body body)
-  "Ensures unique names for all the variables in a groups of forms."
-  (cl:loop for var in vars
-	for name = (gensym (symbol-name var))
-	collect `(,name ,var) into renames
-	collect ``(,,var ,,name ) into temps
-	finally (return
-                  `(let ,renames
-                     (lispworks:with-unique-names ,vars
-                       `(let (,,@temps)
-                          ,,@body ))))))|#
-
-
 (defun enable-quasiquote ()
   (set-macro-character #\,
                        (lambda (stream char)
@@ -436,27 +439,6 @@
                          (declare (ignore char))
                          (list (quote quasiquote)
                                (read stream t nil t) ))))
-
-
-
-#|(defmacro rb (vars &body body)
-  "Ensures unique names for all the variables in a groups of forms."
-  (cl:loop for var in vars
-	for name = (gensym (symbol-name var))
-	collect (quasiquote ((unquote name) (unquote var))) into renames
-	collect (quasiquote
-                  (quasiquote ((unquote (unquote var))
-                               (unquote (unquote name)) ))) into temps
-	finally (return
-                  (quasiquote
-                   (let (unquote renames)
-                     (lispworks:with-unique-names (unquote vars)
-                       (quasiquote
-                        (let ((unquote (unquote-splicing temps)))
-                          (unquote (unquote-splicing body)) ))))))))|#
-
-
-
 
 (macrolet ((def ()
                `(progn
@@ -477,4 +459,62 @@
   `(lambda (,@args)
      ,@body))
 
-;; eof
+(defmacro ^. (&rest clauses)
+  `(snow-match:match-lambda ,@clauses ))
+
+(defmacro ^* (&rest clauses)
+  `(snow-match:match-lambda* ,@clauses ))
+
+(defmacro with-stack-list ((variable &rest elements) &body body)
+  `(let ((,variable (list ,@elements)))
+     (declare (dynamic-extent ,variable))
+     ,@body))
+
+(defmacro with-stack-list* ((variable &rest elements) &body body)
+  `(let ((,variable (list* ,@elements)))
+     (declare (dynamic-extent ,variable))
+     ,@body))
+
+(defuns findq (item series)
+  (let ((ans nil))
+    (iterate ((elt series))
+      (when (eq item elt)
+        (setq ans elt)
+        (terminate-producing)))
+    ans))
+
+(defuns findzql (item series)
+  (let ((ans nil))
+    (iterate ((elt series))
+      (when (eql item elt)
+        (setq ans elt)
+        (terminate-producing)))
+    ans))
+
+
+(defuns findz (item series &optional (test #'eql))
+  (let ((ans nil))
+    (iterate ((elt series))
+      (when (funcall test item elt)
+        (setq ans elt)
+        (terminate-producing)))
+    ans))
+
+(de pkg-foo (p1 p2 pred)
+  (let* ((ans (list nil))
+         (tem ans))
+    (do-external-symbols (e1 p1)
+      (do-external-symbols (e2 p2)
+        (when (funcall pred e1 e2)
+          (rplacd tem (setq tem (list e1)))
+          (return))))
+    (cdr ans)))
+
+(de pkg-difference (p1 p2)
+  (pkg-foo p1 p2 #'string/=))
+
+(de pkg-intersection (p1 p2)
+  (pkg-foo p1 p2 #'string=))
+
+
+;;; eof
