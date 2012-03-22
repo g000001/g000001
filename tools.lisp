@@ -151,7 +151,101 @@
 (de delete-package* (pkg)
   (let* ((pkg (find-package pkg))
          (publ (package-used-by-list pkg)))
-    (cons (prog1 pkg (delete-package pkg))
-          (mapc #'delete-package publ))))
+    (append (mapc #'delete-package publ)
+            (list (delete-package pkg)))))
+
+
+(defmacro diary (&key
+                   ((:pre pre))
+                   ((:w wakatta))
+                   ((:done yatta))
+                   ((:y yaritai))
+                   ((:o omotta)))
+  `(<:body
+    ,@pre
+    (<:h3 "分かったこと")
+    (<:ul
+     ,@(mapcar (^e `(<:li ,@e))
+               wakatta))
+    (<:h3 "やってみたこと")
+    (<:ul
+     ,@(mapcar (^e `(<:li ,@e))
+               yatta))
+    (<:h3 "やりたいこと")
+    (<:ul
+     ,@(mapcar (^e `(<:li ,@e))
+               yaritai))
+    (<:h3 "思ったこと")
+    (<:ul
+     ,@(mapcar (^e `(<:li ,@e))
+               omotta))
+    (<:br)
+    "■"))
+
+
+(de wc (file &key (external-format :utf-8))
+  (let ((s (with-open-file (r file :external-format external-format)
+             (kl:read-stream-to-string r))))
+    (values (count #\Newline s)
+            (1+ (count-if #'kl:is-char-whitespace (kl:collapse-whitespace s)))
+            (count-if-not #'kl:is-char-whitespace s))))
+
+
+(defun tform (form)
+  (let ((*print-gensym* nil)
+        (*gensym-counter* 0))
+    (read-from-string
+     (prin1-to-string
+      (#+sbcl sb-cltl2:macroexpand-all
+       #+lispworks walker:walk-form
+       (source-transform form))))))
+#+sbcl
+(defun fun-segment-to-string (fun)
+  (with-output-to-string (w)
+    (sb-disassem:map-segment-instructions
+     (lambda (chunk inst)
+       (declare (ignore inst))
+       (format w "~X" chunk) )
+     (first (sb-disassem:get-fun-segments fun))
+     (sb-disassem:make-dstate))))
+
+#+sbcl
+(defun inst= (x y)
+  (string= (fun-segment-to-string x)
+           (fun-segment-to-string y)))
+
+(defmacro w/index (spec body-fn)
+  (let ((args (gensym "ARGS-")))
+    `(let ((,(car spec) (1- ,(cadr spec))))
+       (lambda (&rest ,args)
+         (let ((,(car spec) (incf ,(car spec))))
+           (apply ,body-fn ,args)) ))))
+
+
+#+swank
+(defun beep ()
+  ;;; emacs: slime-enable-evaluate-in-emacs => t
+  (swank:eval-in-emacs
+   '(let ((visible-bell t)) (beep)))
+  nil)
+
+
+(defun pp-aa (str)
+  (with-output-to-browser (out)
+    (yaclml:with-yaclml-stream out
+      (<:pre :style "font-family:'giko','ＭＳ Ｐゴシック','ＭＳＰゴシック','MSPゴシック','MS Pゴシック';font-size:16px;line-height:17px;"
+             (<:format str)))))
+
+(defmacro with-new-readtable (&body body)
+  `(let ((*readtable* (copy-readtable nil)))
+     ,@body))
+
+
+(defun make-current-attribute-list-string ()
+  (format nil
+          ";;;-*- Mode:LISP; Package:~A; Base:~D; readtable: ~S -*-"
+          (package-name *package*)
+          *read-base*
+          (readtable-name *readtable*)))
 
 ;;; eof
