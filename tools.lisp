@@ -248,4 +248,21 @@
           *read-base*
           (readtable-name *readtable*)))
 
+(declaim (inline maknum munkam))
+(defun maknum (obj)
+  #+sbcl
+  (sb-kernel:get-lisp-obj-address obj)
+  #-sbcl 0)
+
+(defun munkam (num)
+  #+sbcl
+  (sb-kernel:make-lisp-obj num)
+  #-sbcl nil)
+
+(defun fintern (fmt &rest args)
+  (intern (apply #'format nil fmt args)))
+
+(defun fintern-in-package (pkg fmt &rest args)
+  (intern (apply #'format nil fmt args) pkg))
+
 ;;; eof
