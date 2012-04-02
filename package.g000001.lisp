@@ -56,12 +56,14 @@
                :package (package-name
                          (let ((elt-pkg (symbol-package elt)))
                            (cond ((eq elt-pkg (find-package pkg))
+                                  ;; current (pkg-bind :foo foo:x) => (progn foo:x)
                                   pkg)
                                  ;;
                                  ((and (eq elt-pkg (find-package *package*))
-                                       (not (find-symbol pkg)))
+                                       (find-symbol (string elt) pkg))
+                                  ;; current (pkg-bind :foo x) => (progn foo::x)
                                   pkg)
-                                 ;;
+                                 ;; current (pkg-bind :foo bar:x) => (progn bar:x)
                                  ('T elt-pkg)))))))
     ;;
     (otherwise elt)))
