@@ -1,0 +1,7 @@
+SLIME の自分用 便利ユーティリティ集
+
+使い方
+(load ".../slime-utils/slime-after-load")
+(load ".../slime-utils/slime-config")
+(load ".../slime-utils/slime-ext")
+(load ".../slime-utils/slime-misc")

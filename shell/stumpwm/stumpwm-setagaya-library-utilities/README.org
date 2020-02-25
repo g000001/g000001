@@ -1,0 +1,14 @@
+** 使い方
+   .stumpwmrc
+#+BEGIN_SRC
+;; mode-line
+(setf stumpwm:*screen-mode-line-format*
+      (list "(%b)"
+            "(%c %t)"
+            "(%l)"
+            "|(:lib "
+            '(:eval 
+              (stumpwm-setagaya-library-utilities:watch-reservation-status))
+            ")"))
+#+END_SRC
+とか
