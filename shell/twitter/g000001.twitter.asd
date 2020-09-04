@@ -5,22 +5,17 @@
 
 (defsystem :g000001.twitter
   :serial t
-  :depends-on (
-               ;;#-(:or :lispworks7)
+  :depends-on (:bcl
                :named-readtables
                :arc-compat
                :cl-oauth
-               :cl-json
+               :st-json
                :srfi-19
                :g000001.ja
                :g000001.tools
                :lambda.output)
   :components ((:file "package")
-               #|(:file "readtable")|#
-               ;;#-(:or :lispworks7)
-               (:file "g000001.twitter")
-               ;; #+(:or :lispworks7)(:file "g000001.twitter.cl")
-               ))
+               (:file "g000001.twitter")))
 
 
 (defmethod perform ((o test-op) (c (eql (find-system :g000001.twitter))))
