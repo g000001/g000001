@@ -200,7 +200,14 @@
                                  :if-exists :supersede
                                  :if-does-not-exist :create))
       (dolist (f forms (format out ";;; *EOF*~%"))
-        (format out "~&~A~3%" (string-trim #(#\Space #\Newline #\Tab) f))))))
+        (let ((op (ignore-errors (car (read-from-string f))))
+              (xp (string-trim #(#\Space #\Newline #\Tab) f)))
+          (format out
+                  "~&~A~A~3%" 
+                  xp
+                  (case op
+                    (eval-when "")
+                    (otherwise ""))))))))
 
 
 (defcommand "Lfmt" (p)
@@ -517,7 +524,9 @@
                (end point))
     (unless (form-offset start -1 t 0)
       (editor-error "cannot find start of the form to evaluate"))
-    (let ((*standard-output* (make-string-output-stream))
+    (let ((*package* (or (editor::get-buffer-current-package (point-buffer point))
+                         (find-package 'cl-user)))
+          (*standard-output* (make-string-output-stream))
           (*error-output* (make-string-output-stream))
           (result (list)))
       (setq result 
@@ -534,7 +543,7 @@
                (dolist (r (cdr result))
                  (when (typep r 'condition)
                    (apply #'format *error-output* 
-                          (simple-condition-format-string r)
+                          (simple-condition-format-control r)
                           (simple-condition-format-arguments r)))
                  (insert-string (current-point)
                                 (format nil "~%  ~S" r)))

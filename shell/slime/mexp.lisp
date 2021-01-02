@@ -29,7 +29,8 @@
       (let ((sb-c::*lexenv* env))
         (or (and (fboundp (car form))
                  (funcall (sb-int:info :function :source-transform (car form))
-                          form ))
+                          form
+                          env ))
             (values form t) ))
       (values form T) ))
 
