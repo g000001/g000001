@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp;-*- 
+;;;; -*- Mode: Lisp; coding: utf-8 -*- 
 ;;; "l:src;rw;g000001;shell;editor;lw-editor;commands.lisp"
 
 (in-package editor)

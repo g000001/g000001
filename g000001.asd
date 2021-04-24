@@ -21,7 +21,7 @@
                ||#
                )
   :depends-on
-  ()
+  (bcl)
   #|(:root
    :star
    :g000001.xpath
@@ -80,3 +80,8 @@
    ;; :cl-markdown
    :toot
    )|#)
+
+(setf (logical-pathname-translations "g000001")
+      `(("**;*.*" ,(merge-pathnames #P"**/*.*" 
+                                    (system-source-directory (find-system "g000001"))))))
+

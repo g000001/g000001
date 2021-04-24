@@ -12,8 +12,9 @@
                :series
                :tao-compat
                :yaclml
-               :xpath
                :cl-html-parse
+               :plump
+               :clss
                :g000001.ja)
   :components ((:file "package")
                (:file "g000001.html.tao")))

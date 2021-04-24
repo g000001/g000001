@@ -1,7 +1,10 @@
 ;;;; g000001.html.lisp -*- Mode: Lisp;-*- 
 
 (cl:in-package :g000001.html.internal)
+
+
 (in-readtable :tao)
+
 
 ;; (in-readtable :g000001.html)
 
@@ -33,17 +36,29 @@
   (g000001.ja:decode-jp (drakma:http-request uri :force-binary 'T)))
 
 
-(de html-to-stp (html-string)
-  (chtml:parse html-string (cxml-stp:make-builder)))
+#|(de html-to-stp (html-string)
+  (chtml:parse html-string (cxml-stp:make-builder)))|#
+
+(de html-to-dom (html-string)
+  (plump:parse html-string))
 
 
-(de get-title (uri)
+#|(de get-title (uri)
   (handler-case (let* ((page (html-page-to-string uri))
                        (stp  (html-to-stp page))
                        (ns   (stp:namespace-uri (stp:document-element stp))) )
                   (xpath:with-namespaces (("" ns))
                     (xpath:string-value
                      (xpath:first-node (xpath:evaluate "//title" stp)) )))
+    ((or cl:error #+sbcl sb-kernel::control-stack-exhausted) ()
+      (get-title-simple uri))))|#
+
+
+(de get-title (uri)
+  (handler-case (let* ((page (html-page-to-string uri))
+                       (dom  (html-to-dom page))
+                       (title (clss:select "title" dom)))
+                  (and title (plump:text title)))
     ((or cl:error #+sbcl sb-kernel::control-stack-exhausted) ()
       (get-title-simple uri))))
 
@@ -64,5 +79,3 @@
 
 
 ;;; *EOF*
-
-
