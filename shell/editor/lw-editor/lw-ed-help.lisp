@@ -141,7 +141,7 @@ ED-END-OF-BUFFER window
                               (declare (ignore x y))
                               (setf (simple-pane-background shift)
                                     (and (ldb-test (byte 1 0) mod) 
-                                         :blue))
+                                         :skyblue))
                               (setf (simple-pane-background control)
                                     (and (ldb-test (byte 1 1) mod)
                                          :red))

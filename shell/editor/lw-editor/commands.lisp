@@ -541,7 +541,7 @@
                                   (format nil "~%→ ~S" (car result))
                                   (format nil "~%→ <no values>" (car result))))
                (dolist (r (cdr result))
-                 (when (typep r 'condition)
+                 (when (typep r 'simple-condition)
                    (apply #'format *error-output* 
                           (simple-condition-format-control r)
                           (simple-condition-format-arguments r)))
@@ -665,6 +665,100 @@
 
 
 (mapc #'eval *bind-key-forms*)
+
+
+(cl:in-package "EDITOR")
+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+(unless (fboundp 'with-defun-start-end-points)
+  (defmacro with-defun-start-end-points ((start end &key (errorp t)) the-point
+                                         &body body)
+    (with-unique-names (point res)
+      `(let ((,point ,the-point)
+             (,res nil))
+         (prog1 
+           (with-point-locked
+               (,point :for-modification nil)
+             (with-point ((,start ,point) (,end ,point))
+               (when (eq (setq, res 
+                              (get-defun-start-and-end-points ,point ,start ,end ))
+                         t)
+                 ,@body)))
+           (unless (or (not ,errorp) (not ,res) (eq ,res t))
+             (editor-error ,res))))))))
+
+
+(defun toplevel-form-to-string (point)
+  (let (str form-beg form-end)
+    (with-defun-start-end-points (beg end :errorp nil) point
+      (setq str (points-to-string beg end))
+      (setq form-beg (copy-point beg))
+      (setq form-end (copy-point end)))
+    (values str form-beg form-end)))
+
+
+(defun form-to-string (point)
+  (let (str form-beg form-end)
+    (save-excursion
+      (with-point ((beg point))
+        (setq form-beg (copy-point beg))
+        (forward-form-command 1)
+        (setq str (points-to-string beg (current-point)))
+        (setq form-end (copy-point (current-point)))))
+    (values str form-beg form-end)))
+
+
+(defmacro bind-env (&body body &environment env)
+  `(let (,@(mapcar (lambda (x)
+                     (if (walker:variable-special-p x env)
+                         `(,x ,x)
+                         `(,x ,x)))
+                   (walker::env-lexical-variables env)))
+     '.bind-env.
+     ,@body))
+
+
+(defun extract-binds (form)
+  (labels ((%extract-binds (form)
+             (cond ((atom form) form)
+                   ((and (consp form)
+                         (eq 'let (elt form 0))
+                         (equal ''.bind-env. (elt form 2)))
+                    (return-from extract-binds (elt form 1)))
+                   (T (%extract-binds (print (car form)))
+                      (%extract-binds (cdr form))))))
+    (%extract-binds form)))
+
+
+(defcommand "Save Form With Env" (p)
+     "Save Form With Env"
+     "Save Form With Env"
+  (declare (ignore p))
+  (multiple-value-bind (killed killed-beg killed-end)
+                       (form-to-string (current-point))
+    (with-point ((point (current-point)))
+      (multiple-value-bind (whole whole-beg whole-end)
+                           (toplevel-form-to-string (current-point))
+        (declare (ignore whole))
+        (let* ((killed/env (concatenate 'string
+                                        "(editor::bind-env "
+                                        killed 
+                                        ")"))
+               (whole/env (concatenate 'string
+                                       (points-to-string whole-beg killed-beg)
+                                       killed/env
+                                       (points-to-string killed-end whole-end)))
+               (expanded (with-compilation-environment-at-point (point)
+                           (walker:walk-form (read-from-string whole/env))))
+               (binds (format nil 
+                              "~&(let ~A~%  ~A)"
+                              (write-to-string (extract-binds expanded))
+                              killed)))
+          (set-current-cut-buffer-string (current-window) binds))))))
+ 
+
+
 
 
 ;;; *EOF*
