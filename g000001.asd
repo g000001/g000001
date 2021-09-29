@@ -3,8 +3,9 @@
   :description "g000001"
   :version "8"
   :serial t
-  :components ((:file "shell/package")
-               #||
+  :components ((:module "shell"
+                :components ((:file "package")
+                             #||
                (:file "readtable")
                (:file "decl-utils")
                (:file "decls")
@@ -19,7 +20,9 @@
                (:file "twitter.arc")
                (:file "tools.scm")
                ||#
-               )
+                             ))
+               (:module "shell/editor/lw-editor"
+                :components ((:file "pkgdcl"))))
   :depends-on
   (bcl)
   #|(:root

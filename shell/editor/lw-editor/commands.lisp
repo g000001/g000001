@@ -1,14 +1,7 @@
 ;;;; -*- Mode: Lisp; coding: utf-8 -*- 
 ;;; "l:src;rw;g000001;shell;editor;lw-editor;commands.lisp"
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (or (find-package 'puri) (ql:quickload :puri))
-  (or (find-package :xpath) (ql:quickload :closure-foo))
-  (or (find-package :g000001.ja) (ql:quickload :g000001.ja))
-  (or (find-package :g000001.html) (ql:quickload :g000001.html)))
-
-
-(in-package editor)
+(in-package bed)
 
 
 (defvar *bind-key-forms* '())
@@ -21,7 +14,7 @@
 (defun funcall-or-never (pkg name &rest args)
   (let ((name (string name))
         (pkg (string pkg)))
-    (if-let (fctn (find-symbol name pkg))
+    (lw:if-let (fctn (find-symbol name pkg))
         (apply fctn args)
         (warn "Function: ~A::~A not found." pkg name))))
 
@@ -352,7 +345,7 @@
                         "~2,'0D:~2,'0D "
                         (reverse
                          (subseq 
-                          (multiple-value-list (get-decoded-time))
+                          (multiple-value-list (cl:get-decoded-time))
                           1 3)))))
 
 
@@ -390,11 +383,11 @@
      "One Window Per Buffer"
      "One Window Per Buffer"
   (declare (ignore p))
-  (let ((bufs (remove-if-not #'file-buffer-p
-                             (remove "*Messages Buffer*"
-                                     *buffer-list*
-                                     :key #'buffer-name
-                                     :test #'string=))))
+  (let ((bufs (keep-if #'file-buffer-p
+                       (remove "*Messages Buffer*"
+                               *buffer-list*
+                               :key #'buffer-name
+                               :test #'string=))))
     (dolist (b bufs)
       (unless (buffer-windows b)
         (make-window (buffer-point b))))))
@@ -469,20 +462,20 @@
      "Region To String List"
      "Region To String List"
   (let* ((s (buffer-region-as-string (current-buffer)))
-         (ss (split-sequence #(#\Newline #\Linefeed) s ))
+         (ss (split-sequence:split-sequence #(#\Newline #\Linefeed) s ))
          (ss (if more 
                  (mapcar (lambda (s)
-                           (split-sequence #(#\Space #\Tab) s
-                                           :coalesce-separators T)) 
+                           (split-sequence:split-sequence #(#\Space #\Tab) s
+                                                          :coalesce-separators T)) 
                          ss)
                  ss)))
     (insert-string (current-point) 
-                   (string-append (string #\Newline)
-                                  "'"
-                                  (prin1-to-string ss)))))
+                   (lw:string-append #\Newline
+                                     "'"
+                                     (prin1-to-string ss)))))
 
 
-(when-let (sym (find-symbol "*DESCRIBE-ATTRIBUTE-FORMATTER*" 
+(lw:when-let (sym (find-symbol "*DESCRIBE-ATTRIBUTE-FORMATTER*" 
                             :sys))
   (defun cl-user::slot-printer (stream arg colon at)
     (declare (ignore colon at))
@@ -530,12 +523,12 @@
                (insert-string (current-point)
                               (format nil "~%")))
              (insert-output ()
-               (let ((lines (ppcre:split "\\n" (get-output-stream-string *standard-output*))))
+               (let ((lines (ppcre:split "\\n" (cl:get-output-stream-string *standard-output*))))
                  (dolist (line lines)
                    (insert-string (current-point)
                                   (format nil "~%▻ ~A" line)))))
              (insert-error ()
-               (let ((lines (ppcre:split "\\n" (get-output-stream-string *error-output*))))
+               (let ((lines (ppcre:split "\\n" (cl:get-output-stream-string *error-output*))))
                  (dolist (line lines)
                    (insert-string (current-point)
                                   (format nil "~%⏏ ~A" line))))))
@@ -558,7 +551,7 @@
 
 (defun |Mon d, yyyy | ()
   (multiple-value-bind (.s .m .h d m y)
-                       (get-decoded-time)
+                       (cl:get-decoded-time)
     (declare (ignore .s .m .h))
     (format nil 
             "~[~;Jan~;Feb~;Mar~;Apr~;May~;Jun~;~
@@ -578,8 +571,8 @@
 
 
 (defun in-string-p (pt)
-  (let ((face (getf (text-properties-at pt)
-                    'face)))
+  (let ((face (cl:getf (text-properties-at pt)
+                       'face)))
     (and face
          (typecase face
            (face T)
@@ -594,7 +587,7 @@
          (return)))))
 
 
-(compiler-let ((*packages-for-warn-on-redefinition* nil))
+(lw:compiler-let ((hcl:*packages-for-warn-on-redefinition* nil))
   (defcommand "Backward Up List" (p)
        "Move backward past one containing (."
        "Move backward past one containing (."
@@ -634,7 +627,7 @@
      ""
      ""
   (declare (ignore p))
-  (let ((ut (get-universal-time)))
+  (let ((ut (cl:get-universal-time)))
     (multiple-value-bind (s m h d mo y)
                          (decode-universal-time ut)
       (declare (ignore s))
@@ -651,7 +644,7 @@
 (unless (fboundp 'with-defun-start-end-points)
   (defmacro with-defun-start-end-points ((start end &key (errorp t)) the-point
                                          &body body)
-    (with-unique-names (point res)
+    (lw:with-unique-names (point res)
       `(let ((,point ,the-point)
              (,res nil))
          (prog1 
@@ -699,7 +692,7 @@
 (defun extract-binds (form)
   (labels ((%extract-binds (form)
              (cond ((atom form) form)
-                   ((and (consp form)
+                   ((and (typep form 'cons)
                          (eq 'let (elt form 0))
                          (equal ''.bind-env. (elt form 2)))
                     (return-from extract-binds (elt form 1)))
@@ -875,8 +868,8 @@
   (multiple-value-bind (mat sub)
                        (ppcre:scan-to-strings "\\$(.+?)[\\b/]*?" str)
     (declare (ignore mat))
-    (if-let (env (getenv (elt sub 0)))
-        (pathname (getenv (elt sub 0)))
+    (lw:if-let (env (hcl:getenv (elt sub 0)))
+        (pathname (hcl:getenv (elt sub 0)))
         str)))
 
 
@@ -908,7 +901,7 @@
 (bind-key "Find File*" #("Control-x" "Control-f") :global :emacs)
 
 
-(compiler-let ((*compile-print* nil))
+(lw:compiler-let ((*compile-print* nil))
   (eval
    '(defcommand "←" (p)
          ""

@@ -128,7 +128,8 @@
          (symbol-to-intern-form body (package-name pkg))))))
 
 
-(defun package-exports (pkg &aux (pkg (find-package pkg)))
+(defun package-exports (pkg)
+  (setq pkg (find-package pkg))
   (let ((ans '() ))
     (do-external-symbols (s pkg ans)
       (push s ans))))
