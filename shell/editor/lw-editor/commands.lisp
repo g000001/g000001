@@ -1,6 +1,13 @@
 ;;;; -*- Mode: Lisp; coding: utf-8 -*- 
 ;;; "l:src;rw;g000001;shell;editor;lw-editor;commands.lisp"
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (or (find-package 'puri) (ql:quickload :puri))
+  (or (find-package :xpath) (ql:quickload :closure-foo))
+  (or (find-package :g000001.ja) (ql:quickload :g000001.ja))
+  (or (find-package :g000001.html) (ql:quickload :g000001.html)))
+
+
 (in-package editor)
 
 
@@ -77,7 +84,7 @@
                  (incf cnt)
                  (return)))
            (points-to-string (current-point)
-                             (editor::point-next (current-point)))))
+                             (point-next (current-point)))))
     cnt))
 
 
@@ -101,14 +108,6 @@
   (message (format nil "~A" (the-top-interface))))
 
 
-(defun funcall-or-never (pkg name &rest args)
-  (let ((name (string name))
-        (pkg (string pkg)))
-    (if-let (fctn (find-symbol name pkg))
-        (apply fctn args)
-        (warn "Function: ~A::~A not found." pkg name))))
-
-
 (defcommand "Insert -" (p)
      ""
      ""
@@ -116,7 +115,7 @@
   (insert-string (current-point) "-"))
 
 
-(editor:bind-key "Insert -" "Meta-Space" :global :emacs)
+(bind-key "Insert -" "Meta-Space" :global :emacs)
 
 
 (defcommand "Insert \"\"" (p)
@@ -127,7 +126,7 @@
   (backward-character-command 1))
 
 
-(editor:bind-key "Insert \"\"" "Meta-\"" :global :emacs)
+(bind-key "Insert \"\"" "Meta-\"" :global :emacs)
 
 
 (defcommand "Insert **" (p)
@@ -142,13 +141,13 @@
      ""
      ""
   (declare (ignore p))
-  (editor::with-random-typeout-to-window  
+  (with-random-typeout-to-window
       ((let ((window (car (buffer-windows (current-buffer)))))
          (and window (window-text-pane window))))
     nil))
 
 
-(editor:bind-key "Go Output" #("Meta-g" #\Space) :global :emacs)
+(bind-key "Go Output" #("Meta-g" #\Space) :global :emacs)
 
 
 (defcommand "Raise Listener" (p) 
@@ -161,7 +160,7 @@
             (capi:collect-interfaces 'lispworks-tools:listener))))
 
 
-(editor:bind-key "Raise Listener" #("Meta-g" #\r) :global :emacs)
+(bind-key "Raise Listener" #("Meta-g" #\r) :global :emacs)
 
 
 (defcommand "Raise Editor" (p) 
@@ -174,7 +173,7 @@
             (capi:collect-interfaces 'lispworks-tools:editor))))
 
 
-(editor:bind-key "Raise Editor" #("Meta-g" #\e) :global :emacs)
+(bind-key "Raise Editor" #("Meta-g" #\e) :global :emacs)
 
 
 (defun read-to-string (&optional (stream *standard-input*)
@@ -223,64 +222,50 @@
      ""
   (declare (ignore p))
   (let ((cp (current-point)))
-    (editor::delete-characters cp
-                               (count-white-spaces-to-the-next-sxp))
+    (delete-characters cp (count-white-spaces-to-the-next-sxp))
     (insert-string cp " ")))
 
 
-(editor:bind-key "Just One Space *" #("Control-[" #\Space) :global :emacs)
+(bind-key "Just One Space *" #("Control-[" #\Space) :global :emacs)
 
 
 (defcommand "Evaluate Defun *" (p)
      ""
      ""
-  (editor:evaluate-defun-command p)
+  (evaluate-defun-command p)
   (when p (go-output-command p)))
 
 
-(editor:bind-key "Evaluate Defun *" "Control-E" :global :emacs)
+(bind-key "Evaluate Defun *" "Control-E" :global :emacs)
 
 
-(editor:defcommand "Sort Lines" (reversep)
+(defcommand "Sort Lines" (reversep)
      ""
      ""
-  (let ((buf (editor:current-buffer)))
-    (editor::with-buffer-point-and-mark (buf)
-      (editor:with-point ((start editor::%point% :before-insert)
-                          (end   editor::%mark%  :after-insert))
-        (let ((orig  (editor:points-to-string start end))
-              (modifiedp (editor:buffer-modified buf)))
+  (let ((buf (current-buffer)))
+    (with-buffer-point-and-mark (buf)
+      (with-point ((start %point% :before-insert)
+                   (end   %mark%  :after-insert))
+        (let ((orig  (points-to-string start end))
+              (modifiedp (buffer-modified buf)))
           (unwind-protect 
               (progn
-                (editor:delete-between-points editor::%point% editor::%mark%)
-                (editor:insert-string editor::%point%
-                                      (format nil
-                                              "~{~A~%~}"
-                                              (sort (ppcre:split "\\n" orig)
-                                                    (if reversep #'string> #'string<)))))
-            (editor::record-replace-region start end orig modifiedp)))))))
+                (delete-between-points editor::%point% editor::%mark%)
+                (insert-string %point%
+                               (format nil
+                                       "~{~A~%~}"
+                                       (sort (ppcre:split "\\n" orig)
+                                             (if reversep #'string> #'string<)))))
+            (record-replace-region start end orig modifiedp)))))))
 
 
-(editor:bind-key "Insert **" "Meta-*" :global :emacs)
+(bind-key "Insert **" "Meta-*" :global :emacs)
 
 
-(editor:bind-key "undo" "Control-U" :global :emacs)
+(bind-key "undo" "Control-U" :global :emacs)
 
 
-(editor:bind-key "redo" "control-R" :global :emacs)
-
-
-(defun count-white-spaces-to-the-next-sxp ()
-  (let ((cnt 0))
-    (block nil
-      (map nil
-           (lambda (c)
-             (if (find c #(#\space #\newline #\return #\tab))
-                 (incf cnt)
-                 (return)))
-           (editor:points-to-string (editor:current-point)
-                                    (editor::point-next (editor:current-point)))))
-    cnt))
+(bind-key "redo" "control-R" :global :emacs)
 
 
 (defun listener-save-history ()
@@ -312,10 +297,10 @@
                         (* 2 histlen))))))))))
 
 
-(editor:bind-key "insert ()" "meta-l" :global :emacs)
+(bind-key "Insert ()" "Meta-L" :global :emacs)
 
 
-(editor:bind-key "move over )" "meta-:" :global :emacs)
+(bind-key "Move Over )" "Meta-:" :global :emacs)
 
 
 (defcommand "Clear Output Immediately" (p)
@@ -328,17 +313,15 @@
       (clear-buffer buf))))
 
 
-(editor:bind-key "clear output immediately" #("Control-c" "Meta-o")
-                 :global :emacs)
+(bind-key "Clear Output Immediately" #("Control-c" "Meta-o") :global :emacs)
 
 
-(editor:bind-key "activate interface" "control-;"
-                 :global :emacs)
+(bind-key "Activate Interface" "Control-;" :global :emacs)
 
 
-(defcommand "close current interface" (p)
-     "close current window"
-     "close current window"
+(defcommand "Close Current Interface" (p)
+     "Close Current Window"
+     "Close Current Window"
   (declare (ignore p))
   (let ((prevwin (previous-window (current-window))))
     (call-with-a-text-pane #'invoke-menu-item
@@ -346,20 +329,20 @@
     (goto-to-window-and-buffer prevwin)))
 
 
-(bind-key "close current interface" #("control-x" "control-c"))
+(bind-key "Close Current Interface" #("Control-x" "Control-c"))
 
 
 (progn
-  ;; echo area
-  (bind-key "complete field" #\space :mode "echo area")
-  (bind-key "illegal" "control-M" :mode "echo area")
-  (bind-key "illegal" "control-J" :mode "echo area")
-  (bind-key "illegal" "control-N" :mode "echo area")
-  (bind-key "illegal" "control-P" :mode "echo area")
-  (bind-key "complete input" "control-i" :mode "echo area"))
+  ;; Echo Area
+  (bind-key "Complete Field" #\Space :mode "Echo Area")
+  (bind-key "illegal" "Control-m" :mode "Echo Area")
+  (bind-key "illegal" "Control-j" :mode "Echo Area")
+  (bind-key "illegal" "Control-n" :mode "Echo Area")
+  (bind-key "illegal" "Control-p" :mode "Echo Area")
+  (bind-key "Complete Input" "Control-i" :mode "Echo Area"))
 
 
-(defcommand "insert hh:mm" (p)
+(defcommand "Insert HH:MM" (p)
      ""
      ""
   (declare (ignore p))
@@ -373,45 +356,42 @@
                           1 3)))))
 
 
-(editor:bind-key "delete previous character" "control-h" :global :emacs)
+(bind-key "Delete Previous Character" "Control-h" :global :emacs)
 
 
-(editor:bind-key "undo" "control-z" :global :emacs)
-
-
-(defcommand "show background output window" (p)
-     "show background output window"
-     "show background output window"
+(defcommand "Show Background Output Window" (p)
+     "Show Background Output Window"
+     "Show Background Output Window"
   (declare (ignore p))
   (make-window (buffer-point 
-                (find "background output"
-                      editor:*buffer-list*
+                (find "Background Output"
+                      *buffer-list*
                       :key #'buffer-name 
                       :test #'string=))))
 
 
-(bind-key "show background output window" #("control-c" #\o))
+(bind-key "Show Background Output Window" #("Control-c" #\o))
 
 
-(defcommand "delete other editor interfaces" (p)
-     "delete other editor interfaces"
-     "delete other editor interfaces"
+(defcommand "Delete Other Editor Interfaces" (p)
+     "Delete Other Editor Interfaces"
+     "Delete Other Editor Interfaces"
   (declare (ignore p))
   (dolist (i (cdr (capi:collect-interfaces 'lw-tools:editor
                                            :sort-by :visible)))
     (capi:destroy i))
-  (message "...destroyed."))
+  (message "...Destroyed."))
 
 
-(bind-key "delete other editor interfaces" #("control-c" #\d))
+(bind-key "Delete Other Editor Interfaces" #("Control-c" #\d))
 
 
-(defcommand "one window per buffer" (p)
-     "one window per buffer"
-     "one window per buffer"
+(defcommand "One Window Per Buffer" (p)
+     "One Window Per Buffer"
+     "One Window Per Buffer"
   (declare (ignore p))
   (let ((bufs (remove-if-not #'file-buffer-p
-                             (remove "*messages buffer*"
+                             (remove "*Messages Buffer*"
                                      *buffer-list*
                                      :key #'buffer-name
                                      :test #'string=))))
@@ -420,55 +400,55 @@
         (make-window (buffer-point b))))))
 
 
-(bind-key "one window per buffer" #("control-c" #\x))
+(bind-key "One Window Per Buffer" #("Control-c" #\x))
 
 
-(bind-key "just one space" #("control-c" #\space))
+(bind-key "Just One Space" #("Control-c" #\Space))
 
 
-(bind-key "new window" "control-meta-I")
+(bind-key "New Window" "Control-Meta-I")
 
 
-(bind-key "delete window" "control-meta-!")
+(bind-key "Delete Window" "Control-Meta-!")
 
 
 (defcommand "Browse Url" (arg)
-     "wip"
-     "wip"
+     "WIP"
+     "WIP"
   (declare (ignore arg))
   (let ((curline (line-string (current-point)))
         (url-re (ppcre:create-scanner
                  "(?x:
                     (.*)
-                    (http(s)*://[a-z\\$-_\\.\\+!\\*'\\(\\),]+)
+                    (http(s)*://[A-z\\$-_\\.\\+!\\*'\\(\\),]+)
                     (.*))")))
     (multiple-value-bind (url win)
                          (ppcre:regex-replace url-re curline "\\2")
       (hqn-web:browse 
        (if win
            (string-trim #(#\( #\)) url)
-           (editor:prompt-for-string 
+           (prompt-for-string 
             :default-string "http://g000001.cddddr.org"))))))
 
 
 ;; --:=&?$+@-z_[:alpha:]~#,%;*()!'
 
 
-(bind-key "browse url"
-          #("control-c" "."))
+(bind-key "Browse Url"
+          #("Control-c" "."))
 
 
-(bind-key "evaluate last form in listener"
-          #("control-c" "control-e"))
+(bind-key "Evaluate Last Form In Listener"
+          #("Control-c" "Control-e"))
 
 
-(bind-key "disassemble definition" #("control-c" "meta-d"))
+(bind-key "Disassemble Definition" #("Control-c" "Meta-d"))
 
 
-(editor:bind-key "insert space and show arglist" #\space :global :emacs)
+(bind-key "Insert Space and Show Arglist" #\Space :global :emacs)
 
 
-(editor:bind-key "walk form" "control-meta-m" :global :emacs)
+(bind-key "Walk Form" "Control-Meta-M" :global :emacs)
 
 
 (defun toggle-interface-toolbar ()
@@ -485,29 +465,29 @@
   (toggle-interface-toolbar))
 
 
-(defcommand "region to string list" (more)
-     "region to string list"
-     "region to string list"
+(defcommand "Region To String List" (more)
+     "Region To String List"
+     "Region To String List"
   (let* ((s (buffer-region-as-string (current-buffer)))
-         (ss (split-sequence #(#\newline #\linefeed) s ))
+         (ss (split-sequence #(#\Newline #\Linefeed) s ))
          (ss (if more 
                  (mapcar (lambda (s)
-                           (split-sequence #(#\space #\tab) s
-                                           :coalesce-separators t)) 
+                           (split-sequence #(#\Space #\Tab) s
+                                           :coalesce-separators T)) 
                          ss)
                  ss)))
     (insert-string (current-point) 
-                   (string-append (string #\newline)
+                   (string-append (string #\Newline)
                                   "'"
                                   (prin1-to-string ss)))))
 
 
-(when-let (sym (find-symbol "*describe-attribute-formatter*" 
+(when-let (sym (find-symbol "*DESCRIBE-ATTRIBUTE-FORMATTER*" 
                             :sys))
   (defun cl-user::slot-printer (stream arg colon at)
     (declare (ignore colon at))
-    (format stream "~a (~(~a~))" arg (package-name (symbol-package arg))))
-  (set sym "~s"))
+    (format stream "~A (~(~A~))" arg (package-name (symbol-package arg))))
+  (set sym "~S"))
 
 
 (defun indent-n (n str)
@@ -524,7 +504,7 @@
                (end point))
     (unless (form-offset start -1 t 0)
       (editor-error "cannot find start of the form to evaluate"))
-    (let ((*package* (or (editor::get-buffer-current-package (point-buffer point))
+    (let ((*package* (or (get-buffer-current-package (point-buffer point))
                          (find-package 'cl-user)))
           (*standard-output* (make-string-output-stream))
           (*error-output* (make-string-output-stream))
@@ -564,7 +544,7 @@
         (insert-result)))))
 
 
-(bind-key "evaluate last form*" "control-J" :global :emacs)
+(bind-key "Evaluate Last Form*" "Control-J" :global :emacs)
 
 
 (defcommand "Browse Class" (p)
@@ -599,7 +579,7 @@
 
 (defun in-string-p (pt)
   (let ((face (getf (text-properties-at pt)
-                    'editor:face)))
+                    'face)))
     (and face
          (typecase face
            (face T)
@@ -658,16 +638,13 @@
     (multiple-value-bind (s m h d mo y)
                          (decode-universal-time ut)
       (declare (ignore s))
-      (editor:insert-string (editor:current-point)
-                            (format nil
-                                    "~D ;~D-~2,'0D-~2,'0DT~2,'0D~2,'0D"
-                                    ut y mo d h m)))))
+      (insert-string (current-point)
+                     (format nil
+                             "~D ;~D-~2,'0D-~2,'0DT~2,'0D~2,'0D"
+                             ut y mo d h m)))))
 
 
 (mapc #'eval *bind-key-forms*)
-
-
-(cl:in-package "EDITOR")
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -756,9 +733,189 @@
                               (write-to-string (extract-binds expanded))
                               killed)))
           (set-current-cut-buffer-string (current-window) binds))))))
- 
 
 
+(defcommand "Clear Listener*" (p)
+     "Clear the listener"
+     "Clear the listener"
+  (declare (ignore p))
+  (let ((buffer (print (current-buffer))))
+    (when (buffer-execute-p buffer)
+      (when T
+        (clear-listener)))))
+
+
+(defun canonicalize-amazon-url (url &optional (affiliatep T))
+  (let ((uri (puri:parse-uri url)))
+  (flet ((canonicalize-path (path)
+           (ppcre:regex-replace ".*/dp/([^/]+)/.*"
+                                path
+                                "/dp/\\1/"))
+         (canonicalize-path/affiliate (path)
+           (ppcre:regex-replace ".*/dp/([^/]+)/.*"
+                                path
+                                "/exec/obidos/ASIN/\\1/lisphub-22"))
+         (uri-to-string (uri)
+           (with-output-to-string (out)
+             (puri:render-uri uri out))))
+  (multiple-value-bind (path win)
+                       (funcall (if affiliatep 
+                                    #'canonicalize-path/affiliate
+                                    #'canonicalize-path)
+                                (puri:uri-path uri))
+  (and win
+       (uri-to-string
+        (make-instance 'puri:uri 
+                       :scheme (puri:uri-scheme uri)
+                       :host (puri:uri-host uri)
+                       :path path)))))))
+
+
+(defcommand "Canonicalize Amazon Url Region" (p)
+     "Canonicalize Amazon Url Region"
+     "Canonicalize Amazon Url Region"
+  (insert-string (current-point)
+                 (lw:string-append
+                  (string #\Newline)
+                  (canonicalize-amazon-url
+                   (buffer-region-as-string (current-buffer))
+                   p))))
+
+
+(defcommand "Get Title by Url Region" (p)
+     "Get Title by Url Region"
+     "Get Title by Url Region"
+  (declare (ignore p))
+  (insert-string 
+   (current-point)
+   (lw:string-append
+    (string #\Newline)
+    (uiop:symbol-call :g000001.html
+                      :get-title
+                      (buffer-region-as-string (current-buffer))))))
+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun reddit-post-link (sub uri)
+    (let* ((title (g000001.html:get-title uri))
+           (base (lw:string-append "https://www.reddit.com/r/"
+                                   sub
+                                   "/submit")))
+      (flet ((enc (uri)
+               (drakma:url-encode uri :utf-8)))
+        (format nil
+                "~A?url=~A&title=~A"
+                base
+                (enc uri)
+                (enc title))))))
+
+
+(defcommand "/r/nicovideo" (arg)
+     "WIP"
+     "WIP"
+  (declare (ignore arg))
+  (let ((curline (line-string (current-point)))
+        (url-re (ppcre:create-scanner
+                 "(?x:
+                    (.*)
+                    (http(s)*://[A-z\\$-_\\.\\+!\\*'\\(\\),]+)
+                    (.*))")))
+    (multiple-value-bind (uri win)
+                         (ppcre:regex-replace url-re curline "\\2")
+      (hqn-web:browse 
+       (if win
+           (reddit-post-link "nicovideo" uri)
+           (prompt-for-string 
+            :default-string "https://www.reddit.com/submit"))))))
+
+
+(defcommand "/r/lisp_ja" (arg)
+     "WIP"
+     "WIP"
+  (declare (ignore arg))
+  (let ((curline (line-string (current-point)))
+        (url-re (ppcre:create-scanner
+                 "(?x:
+                    (.*)
+                    (http(s)*://[A-z\\$-_\\.\\+!\\*'\\(\\),]+)
+                    (.*))")))
+    (multiple-value-bind (uri win)
+                         (ppcre:regex-replace url-re curline "\\2")
+      (hqn-web:browse 
+       (if win
+           (reddit-post-link "lisp_ja" uri)
+           (prompt-for-string 
+            :default-string "https://www.reddit.com/submit"))))))
+
+
+(defcommand "/r/programming_jp" (arg)
+     "WIP"
+     "WIP"
+  (declare (ignore arg))
+  (let ((curline (line-string (current-point)))
+        (url-re (ppcre:create-scanner
+                 "(?x:
+                    (.*)
+                    (http(s)*://[A-z\\$-_\\.\\+!\\*'\\(\\),]+)
+                    (.*))")))
+    (multiple-value-bind (uri win)
+                         (ppcre:regex-replace url-re curline "\\2")
+      (hqn-web:browse 
+       (if win
+           (reddit-post-link "programming_jp" uri)
+           (prompt-for-string 
+            :default-string "https://www.reddit.com/submit"))))))
+
+
+(defun expand-env-var (str)
+  (typecase str
+    (pathname (setq str (namestring str))))
+  (or (find #\$ str)
+      (return-from expand-env-var (pathname str)))
+  (multiple-value-bind (mat sub)
+                       (ppcre:scan-to-strings "\\$(.+?)[\\b/]*?" str)
+    (declare (ignore mat))
+    (if-let (env (getenv (elt sub 0)))
+        (pathname (getenv (elt sub 0)))
+        str)))
+
+
+(defcommand "Find File*" (p &optional pathname (external-format :default) (warp t))
+     ""
+     ""
+  (let* ((pn (expand-env-var
+              (or pathname
+                  (prompt-for-file 
+                   :prompt "Find File: "
+                   :must-exist nil
+                   :wildp *find-file-wild-pathname-p*
+                   :help "Name of file to read into its own buffer."
+                   :file-directory-p *find-file-file-directory-p*
+                   :default (buffer-default-directory (current-buffer))))))
+	 (buffer (if (wild-pathname-p pn)
+                     (new-buffer-for-directory pn
+                                               (if (or (pathname-name pn)
+                                                       (pathname-type pn))
+                                                   nil
+                                                 *ignorable-file-suffices*))
+                   (find-file-buffer-verbose pn nil external-format))))
+    (when buffer
+      (record-active-buffer-pathname buffer :open)
+      (goto-buffer-if-unflagged-current p buffer warp))
+    buffer))
+
+
+(bind-key "Find File*" #("Control-x" "Control-f") :global :emacs)
+
+
+(compiler-let ((*compile-print* nil))
+  (eval
+   '(defcommand "←" (p)
+         ""
+         ""
+      (declare (ignore p))
+      (insert-string (current-point) "← ")))
+  (bind-key "←" "Control-Z" :global :emacs))
 
 
 ;;; *EOF*
