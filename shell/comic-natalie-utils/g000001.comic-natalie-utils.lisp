@@ -21,6 +21,10 @@
   (chtml:parse string (stp:make-builder)))
 
 
+(def html->dom (string)
+  (plump:parse string))
+
+
 (mac doxpath ((node stp xpath) cl:&body body)
   `(xpath:with-namespaces (("" (stp:namespace-uri (stp:document-element ,stp))))
      (each ,node (xpath:all-nodes (xpath:evaluate ,xpath ,stp))
@@ -177,4 +181,6 @@
     (=> cs :print-new-comics)))
 
 
+#++
+(check-comics)
 ;;; *EOF* 

@@ -30,6 +30,22 @@ ED-END-OF-BUFFER window
 ||#
 
 
+(defun find-commands ()
+  (for (each elt (the vector (slot-value editor::*command-names* 'editor::table )))
+       (appending
+        (when (and elt
+                   (typep elt 'editor::string-table-entry))
+          (let* ((cmd (slot-value elt 'editor::value ))
+                 (cmdname (editor::command-%name cmd))
+                 (interesting-command (editor::describe-command cmd)))
+            (if (not (member cmdname editor::*uninteresting-commands* :test #'string-equal))
+                (or interesting-command
+                    (list (list nil cmdname nil)))
+                nil))))))
+
+;;(find-commands)
+
+
 (define-interface ed-help-window ()
   ((all-commands :reader all-commands 
                  :initform (mapcar (^ (c)
@@ -39,7 +55,8 @@ ED-END-OF-BUFFER window
                                        (list name
                                              ;;(editor::sub-print-key-to-string gs)
                                              gs)))
-                                   (editor::find-interesting-commands :modes :all))))
+                                   ;;(editor::find-interesting-commands :modes :all)
+                                   (find-commands))))
   (:layouts
    (main column-layout '(contains mods commands documentation)))
   (:panes
@@ -55,7 +72,10 @@ ED-END-OF-BUFFER window
              :items all-commands
              :reader ed-help-window-list-panel
              :item-print-functions (list #'identity
-                                         #'editor::sub-print-key-to-string)
+                                         (^ (x)
+                                           (if x
+                                               (editor::sub-print-key-to-string x)
+                                               "")))
              :selection-callback 
              (^ (item itf)
                (flet ((update ()
@@ -85,7 +105,7 @@ ED-END-OF-BUFFER window
     (setf (collection-items 
            (ed-help-window-list-panel ed-help-window))
           filtered-things)
-    (let* ((doc (get ed-help-window 'documentation))
+    (let* ((doc (~ ed-help-window 'documentation))
            (lp (ed-help-window-list-panel ed-help-window)))
       (flet ((update ()
                (setf (text-input-pane-text doc)
@@ -112,7 +132,7 @@ ED-END-OF-BUFFER window
     (setf (collection-items 
            (ed-help-window-list-panel ed-help-window))
           filtered-things)
-    (let* ((doc (get ed-help-window 'documentation))
+    (let* ((doc (~ ed-help-window 'documentation))
            (lp (ed-help-window-list-panel ed-help-window)))
       (flet ((update ()
                (setf (text-input-pane-text doc)
@@ -138,7 +158,7 @@ ED-END-OF-BUFFER window
    (sensor output-pane
            :input-model `((:modifier-change
                            ,(^ (itf x y mod)
-                              (declare (ignore x y))
+                              (declare (ignore itf x y))
                               (setf (simple-pane-background shift)
                                     (and (ldb-test (byte 1 0) mod) 
                                          :skyblue))
@@ -146,11 +166,17 @@ ED-END-OF-BUFFER window
                                     (and (ldb-test (byte 1 1) mod)
                                          :red))
                               (setf (simple-pane-background meta)
+                                    #+cocoa
+                                    (and (ldb-test (byte 1 3) mod) ;command
+                                         :green)
+                                    #-cocoa
                                     (and (ldb-test (byte 1 2) mod)
                                          :green))
                               (if (zerop mod)
                                   (progn
-                                    (gp:clear-graphics-port itf)
+                                    (setf (simple-pane-background shift) :white)
+                                    (setf (simple-pane-background control) :white)
+                                    (setf (simple-pane-background meta) :white)
                                     (funcall notifee nil :release))
                                   (funcall notifee (sys:make-gesture-spec nil mod)
                                            :press))))
@@ -172,9 +198,9 @@ ED-END-OF-BUFFER window
                                               18)
                               (funcall notifee gs :press))))
            :title "Key:" :title-position :left)
-   (shift title-pane :background nil :text "Shift" :title-position :frame)
-   (meta title-pane :background nil :text "Meta" :title-position :frame)
-   (control title-pane :background nil :text "Ctrl" :title-position :frame)
+   (shift title-pane :background :white :text "Shift" :title-position :frame)
+   (meta title-pane :background :white :text "Meta" :title-position :frame)
+   (control title-pane :background :white :text "Ctrl" :title-position :frame)
    (char title-pane :background nil :text "" :title-position :frame))
   (:layouts 
    (main column-layout '(mods sensor))

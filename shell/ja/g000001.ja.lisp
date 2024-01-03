@@ -456,6 +456,7 @@
 
 
 (defparameter *japanese-hentaigana-table*
+  #-allegro
   '((#\た #\𛁠)
     (#\だ "𛁠゙")
     (#\か #\𛀙)
@@ -475,7 +476,8 @@
     (#\な #\𛂁)
     (#\と #\𛁻)
     (#\す #\𛁑)
-    (#\け #\𛀳)))
+    (#\け #\𛀳))
+  #+allegro '())
 
 (let ((prev nil))
   (defun string-kana-to-hentaigana (str)

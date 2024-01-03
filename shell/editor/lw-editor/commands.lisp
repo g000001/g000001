@@ -258,7 +258,7 @@
 (bind-key "undo" "Control-U" :global :emacs)
 
 
-(bind-key "redo" "control-R" :global :emacs)
+(editor:bind-key "redo" "control-R" :global :emacs)
 
 
 (defun listener-save-history ()
@@ -438,7 +438,7 @@
 (bind-key "Disassemble Definition" #("Control-c" "Meta-d"))
 
 
-(bind-key "Insert Space and Show Arglist" #\Space :global :emacs)
+(editor:bind-key "Insert Space And Show Arglist" #\Space :global :emacs)
 
 
 (bind-key "Walk Form" "Control-Meta-M" :global :emacs)
@@ -497,14 +497,15 @@
                (end point))
     (unless (form-offset start -1 t 0)
       (editor-error "cannot find start of the form to evaluate"))
-    (let ((*package* (or (get-buffer-current-package (point-buffer point))
+    (let ((*package* (or (editor::get-buffer-current-package (current-buffer))
                          (find-package 'cl-user)))
           (*standard-output* (make-string-output-stream))
           (*error-output* (make-string-output-stream))
           (result (list)))
+      (capi:display-message "~S" (editor::get-buffer-current-package (current-buffer)))
       (setq result 
             (multiple-value-list 
-             (ignore-errors
+             (progn;ignore-errors
                (eval
                 (read-from-string 
                  (points-to-string start end))))))

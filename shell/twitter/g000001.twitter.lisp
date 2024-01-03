@@ -110,7 +110,7 @@
 
 
 (defutilfun showtl (cl:&key (count 50))
-  (each tw (twclient :get "statuses/home_timeline"
+  (each tw (?::twclient :get "statuses/home_timeline"
                      :? `(("count" . ,string.count)))
     (print-tweet tw)))
 
@@ -119,11 +119,11 @@
 
 
 (def last-@masso-tweet ()
-  (twclient :get "statuses/user_timeline"
-                   :? `(("user_id" . ,(@masso))
-                        ("count" . "1")
-                        ("trim_user" . "true")
-                        ("include_rts" . "false"))))
+  (?::twclient :get "statuses/user_timeline"
+              :? `(("user_id" . ,(@masso))
+                   ("count" . "1")
+                   ("trim_user" . "true")
+                   ("include_rts" . "false"))))
 
 
 (def tweet-id (tw)
@@ -131,7 +131,7 @@
 
 
 (defutilfun showl (cl:&key (user "masso") (list "z") (count 50) (filter #'idfn))
-  (each tw (twclient :get "lists/statuses" 
+  (each tw (?::twclient :get "lists/statuses" 
                      :? `(("slug" . ,list)
                           ("owner_screen_name" . ,user)
                           ("count" . ,(string count))))
@@ -159,6 +159,12 @@
   (with (url "https://api.twitter.com/1.1/statuses/update.json"
          status `("status" . ,message)
          in_reply_to_status_id (and re `(("in_reply_to_status_id" . ,string.re))))
+    (cl:print
+     `(oauth:access-protected-resource 
+       ,url
+       ,(access-token)
+       :request-method :post
+       :user-parameters (,status ,@in_reply_to_status_id)))
     (let tw (safe-decode-json-from-string
              (oauth:access-protected-resource 
               url
@@ -268,6 +274,8 @@
                                   "~D"
                                   (cl:read-from-string (cl:lisp-implementation-version)))
                         #+:gnu "/HURD"))
+        (and (is "8.0.0" (cl:lisp-implementation-version)) :lispworks8.0.0)
+        (and (is "8.0.1" (cl:lisp-implementation-version)) :lispworks8.0.1)
         (and (is "7.1.1" (cl:lisp-implementation-version)) :lispworks7.1.1)
         (and (is "7.1.2" (cl:lisp-implementation-version)) :lispworks7.1.2)
         (cl:Find :lispworks7.1 cl:*features*)
@@ -275,7 +283,7 @@
              :lispworks7.0)|#
         (cl:Find :lispworks7.0 cl:*features*)
         (cl:Find :lispworks6.0 cl:*features*)
-        (cl:Find :lispwork6s.1 cl:*features*)
+        (cl:Find :lispworks6.1 cl:*features*)
         (cl:find :lispworks5.1 cl:*features*)
         (cl:find :lispworks4.4 cl:*features*)
         (cl:Find :CCL-1.10 cl:*features*)
@@ -285,11 +293,20 @@
         (cl:Find :armedbear cl:*features*)
         (cl:Find :ALLEGRO-V8.2 cl:*features*)
         (cl:Find :ALLEGRO-V8.1 cl:*features*)
+        (cl:Find :ALLEGRO-CL-EXPRESS cl:*features*)
         (cl:Find :allegro-v10.1 cl:*features*)
         (cl:Find :ALLEGRO cl:*features*)
         (cl:And (cl:Find :ecl cl:*features*)
                 (string "ecl-" (cl:lisp-implementation-version)))
         ))))
+
+
+(defutil twe-string message&re
+  (string message&re
+          #\Newline
+          (?::current-clock-face-string)
+          " "
+          (?::make-|#+|)))
 
 
 (defutil twe/ message&re
@@ -310,7 +327,8 @@
 
 
 (defutil twe message&re
-  (when (capi:confirm-yes-or-no "~A" message&re)
+  (when #+lispworks (capi:confirm-yes-or-no "~A" message&re)
+        #-lispworks (SWANK:Y-OR-N-P-IN-EMACS "~A" message&re)
     (?:tw
      (string (?::make-\#+)
              "'|"

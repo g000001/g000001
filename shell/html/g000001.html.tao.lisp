@@ -1,9 +1,10 @@
 ;;;; g000001.html.lisp -*- Mode: Lisp;-*- 
+(tao:tao)
 
 (cl:in-package :g000001.html.internal)
 
 
-(in-readtable :tao)
+;(in-readtable :tao)
 
 
 ;; (in-readtable :g000001.html)
@@ -17,9 +18,9 @@
 
 
 (de title-filter (str)
-  (ppcre:regex-replace-all "(&nbsp;|\\n|\\s+)"
+  (ppcre:regex-replace-all "((?:&nbsp;)+|\\n+|\\s+)"
                            str
-                           ""))
+                           " "))
 
 
 (de get-title-simple (uri)

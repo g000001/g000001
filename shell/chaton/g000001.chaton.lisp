@@ -4,10 +4,10 @@
 (in-readtable :arc)
 
 
-(def drakma args
+(def drakma (url . args)
   (let drakma:*drakma-default-external-format* :utf-8
     (babel:octets-to-string 
-     (coerce (apply #'drakma:http-request args)
+     (coerce (apply #'drakma:http-request url :force-binary T args)
              '(cl:vector (cl:unsigned-byte 8)))
      :encoding :utf-8)))
 
@@ -53,14 +53,15 @@
 
 
 (def chaton-cl-mesgs ()
-  (each (name time mesg)
+  (let cl:*package* (cl:find-package :g000001.chaton.internal)
+    (each (name time mesg)
         (cdr:assoc 'content (cl:read-from-string (observe-chaton-cl)))
-    (prn)
-    (prn name ":")
-    ;; (time:print-universal-time (kmrcl:posix-time-to-utime:int car.time))
-    (prn:kmrcl:posix-time-to-utime:int car.time)
-    (prn)
-    (prn mesg)))
+      (prn)
+      (prn name ":")
+      ;; (time:print-universal-time (kmrcl:posix-time-to-utime:int car.time))
+      (prn:kmrcl:posix-time-to-utime:int car.time)
+      (prn)
+      (prn mesg))))
 
 
 ;;; *EOF*

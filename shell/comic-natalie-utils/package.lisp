@@ -9,5 +9,6 @@
 (defpackage :g000001.comic-natalie-utils.internal
   (:use :g000001.comic-natalie-utils :arc :named-readtables :fiveam
         :cool)
-  (:shadowing-import-from :arc :is))
+  (:shadowing-import-from :arc :is)
+  (:shadowing-import-from :co :self))
 
