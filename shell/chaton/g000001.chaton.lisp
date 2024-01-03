@@ -12,6 +12,7 @@
      :encoding :utf-8)))
 
 
+#+(and lispworks7+ (not lispworks7.0))
 (let user nil
   (def chaton-login (room)
     (let ret (drakma 
@@ -19,6 +20,26 @@
               :method :post
               :parameters '(("who" . "drakma")
                             ("s" . "1")))
+      (let cl:*readtable* (cl:copy-readtable nil)
+        (= (cl:readtable-case cl:*readtable*) :preserve)
+        (= user (cl:read-from-string ret))
+        user)))
+  (def chaton-user ((o room))
+    (or user (chaton-login room))))
+
+
+'(dex:post (arc:string "https://chaton.practical-scheme.net/" "common-lisp-jp" "/apilogin")
+          :headers '(("Content-type" . "application/x-www-form-urlencoded"))
+          :content (arc:string "who" "=" "drakma"
+                               "&"
+                               "s" "=" "1"))
+
+
+(let user nil
+  (def chaton-login (room)
+    (let ret (dex:post (string "http://chaton.practical-scheme.net/" room "/apilogin")
+                       :content '(("who" . "drakma")
+                                  ("s" . "1")))
       (let cl:*readtable* (cl:copy-readtable nil)
         (= (cl:readtable-case cl:*readtable*) :preserve)
         (= user (cl:read-from-string ret))

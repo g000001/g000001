@@ -23,18 +23,29 @@
                            " "))
 
 
-(de get-title-simple (uri)
+#|(de get-title-simple (uri)
   (with-input-from-string (str (g000001.ja:decode-jp
                                 (drakma:http-request uri
                                                      :force-binary 'T)))
     (first
      (mapcar (kl:compose #'title-filter #'second)
              (choose-elt :title
+                         (html-parse:parse-html str))))))|#
+
+(de get-title-simple (uri)
+  (with-input-from-string (str (g000001.ja:decode-jp
+                                (dex:get uri :force-binary 'T)))
+    (first
+     (mapcar (kl:compose #'title-filter #'second)
+             (choose-elt :title
                          (html-parse:parse-html str))))))
 
 
+#|(de html-page-to-string (uri)
+  (g000001.ja:decode-jp (drakma:http-request uri :force-binary 'T)))|#
+
 (de html-page-to-string (uri)
-  (g000001.ja:decode-jp (drakma:http-request uri :force-binary 'T)))
+  (g000001.ja:decode-jp (dex:get uri :force-binary 'T)))
 
 
 #|(de html-to-stp (html-string)

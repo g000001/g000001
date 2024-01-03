@@ -2,7 +2,7 @@
 
 
 (defreadtable :g1.tao
-  (:merge :tao)
+  ;(:merge :tao)
   (:macro-char #\{ (lambda (srm char)
                      (declare (cl:ignore char))
                      #+sbcl (sb-impl::read-string srm #\})
